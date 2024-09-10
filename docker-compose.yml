@@ -105,6 +105,8 @@ services:
       - VIRTUAL_HOST=${VIRTUAL_HOST}
       - VIRTUAL_PORT=8000
       - LETSENCRYPT_HOST=${LETSENCRYPT_HOST}
+      - CTF_NAME=${CTF_NAME}
+      - CTF_DESC=${CTF_DESC}
     volumes:
       - /data:/var/data
       - /data/CTFd/logs:/var/log/CTFd
