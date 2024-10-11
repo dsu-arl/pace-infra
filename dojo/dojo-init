@@ -25,6 +25,7 @@ DEFAULT_DOJO_HOST=localhost.pwn.college
 define DOJO_HOST "${DEFAULT_DOJO_HOST}"
 define VIRTUAL_HOST "${DEFAULT_DOJO_HOST}"
 define LETSENCRYPT_HOST "${DEFAULT_DOJO_HOST}"
+define USE_LETSENCRYPT yes # default to starting nginx-proxy-acme container
 define DOJO_ENV development
 define DOJO_WORKSPACE core
 define WORKSPACE_KEY
