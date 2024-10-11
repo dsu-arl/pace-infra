@@ -241,7 +241,7 @@ services:
   acme-companion:
     container_name: nginx-proxy-acme
     profiles:
-      - main
+      - letsencrypt
     image: nginxproxy/acme-companion:2.3
     restart: always
     volumes_from:
