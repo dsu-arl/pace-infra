@@ -38,6 +38,7 @@ in
     vim
     neovim
     emacs
+    nano
 
     tmux
     screen
