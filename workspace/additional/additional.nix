@@ -37,6 +37,7 @@ in
 
     vim
     emacs
+    nano
 
     ghidra
     ida-free
