@@ -6,7 +6,6 @@ let
     asteval
     flask
     ipython
-    jupyter
     psutil
     pwntools
     pycryptodome
@@ -14,6 +13,7 @@ let
     requests
     scapy
     selenium
+    beautifulsoup4
   ]);
 
   ida-free = pkgs.ida-free.overrideAttrs (oldAttrs: {
@@ -70,6 +70,8 @@ in
     ropgadget
 
     sage
+
+    jupyter
 
     # TODO: apt-tools
   ];
