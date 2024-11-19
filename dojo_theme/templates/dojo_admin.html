@@ -10,6 +10,16 @@
 </div>
 <div class="container">
   <div id="dojo-delete-results" class="form-group">
+  <label for="branch">Choose a branch:</label>
+  <select id="branch" onchange="updateBranch()">
+    <option value="" disabled>Select a branch</option>
+    {% for branch in branches %}
+        <option value="{{ branch }}" {% if branch == "main" %}selected{% endif %}>
+            {{ branch }}
+        </option>
+    {% endfor %}
+  </select>
+
   <div class="row text-center">
     <div class="col-lg-auto m-3">
       <figure>
@@ -23,7 +33,12 @@
     </div>
     <div class="col-lg-auto m-3">
       <figure>
-      <a class="text-decoration-none" href="{{ url_for('pwncollege_dojo.update_dojo', dojo=dojo.reference_id, update_code=dojo.update_code) }}" target="_blank">
+      <a 
+        id="updateDojoBtn"
+        class="text-decoration-none" 
+        href="{{ url_for('pwncollege_dojo.update_dojo', dojo=dojo.reference_id, update_code=dojo.update_code, branch_name='main') }}" 
+        target="_blank"
+      >
         <i class="fas fa-upload fa-3x"></i>
         <figcaption><b style="font-family: 'Courier New', Courier, monospace">Update</b></figcaption>
       </a>
@@ -104,6 +119,14 @@
     </div>
   </form>
 </div>
+<script>
+  function updateBranch() {
+      // Get the selected branch name
+      const selectedBranch = document.getElementById("branch").value
+      document.getElementById("updateDojoBtn").href = 
+          `{{ url_for('pwncollege_dojo.update_dojo', dojo=dojo.reference_id, update_code=dojo.update_code) }}?branch_name=${selectedBranch}`;
+  }
+</script>
 {% endblock %}
 
 {% block entrypoint %}
