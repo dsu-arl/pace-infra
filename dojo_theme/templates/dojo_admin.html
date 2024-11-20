@@ -1,5 +1,16 @@
 {% extends "base.html" %}
 
+{% block stylesheets %}
+<style>
+  #branch {
+    background-color: #2e2e2e;
+    color: white;
+    padding: 4px;
+    font-family: monospace;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="jumbotron">
   <div class="container">
@@ -11,6 +22,7 @@
 <div class="container">
   <div id="dojo-delete-results" class="form-group">
   <label for="branch">Choose a branch:</label>
+  <br>
   <select id="branch" onchange="updateBranch()">
     <option value="" disabled>Select a branch</option>
     {% for branch in branches %}
