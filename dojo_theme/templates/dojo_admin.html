@@ -6,6 +6,7 @@
     background-color: #2e2e2e;
     color: white;
     padding: 4px;
+    margin-left: 10px;
     font-family: monospace;
   }
 </style>
@@ -21,8 +22,7 @@
 </div>
 <div class="container">
   <div id="dojo-delete-results" class="form-group">
-  <label for="branch">Choose a branch:</label>
-  <br>
+  <label for="branch">Choose a branch to update to:</label>
   <select id="branch" onchange="updateBranch()">
     <option value="" disabled>Select a branch</option>
     {% for branch in branches %}
