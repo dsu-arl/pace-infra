@@ -15,6 +15,11 @@ let
     ropper
     scapy
     selenium
+    
+    # Packages needed for AI dojo
+    pandas
+    scikit-learn
+    tensorflow
   ]);
 
 in
