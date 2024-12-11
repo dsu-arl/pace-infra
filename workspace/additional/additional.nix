@@ -6,7 +6,6 @@ let
     asteval
     flask
     ipython
-    jupyter
     psutil
     pwntools
     pycryptodome
@@ -14,6 +13,7 @@ let
     requests
     scapy
     selenium
+    beautifulsoup4
     
     # Packages needed for AI dojo
     pandas
@@ -75,6 +75,8 @@ in
     ropgadget
 
     sage
+
+    jupyter
 
     # TODO: apt-tools
   ];

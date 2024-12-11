@@ -417,9 +417,9 @@ def dojo_git_command(dojo, *args):
                           capture_output=True)
 
 
-def dojo_update(dojo):
+def dojo_update(dojo, branch_name="main"):
     dojo_git_command(dojo, "fetch", "--depth=1", "origin")
-    dojo_git_command(dojo, "reset", "--hard", "origin")
+    dojo_git_command(dojo, "reset", "--hard", f"origin/{branch_name}")
     dojo_git_command(dojo, "submodule", "update", "--init", "--recursive")
     return dojo_from_dir(dojo.path, dojo=dojo)
 
@@ -505,3 +505,12 @@ def get_prev_cur_next_dojo_challenge(user=None, active=None):
         'next':next
     }
 
+def get_branches(repository):
+    url = f'https://api.github.com/repos/{repository}/branches'
+    response = requests.get(url)
+    branches = []
+    if response.status_code == 200:
+        branches = [branch['name'] for branch in response.json()]
+    else:
+        print(f'Failed to fetch branches from {repository}: {response.status_code}')
+    return branches
