@@ -14,6 +14,11 @@ let
     scapy
     selenium
     beautifulsoup4
+    
+    # Packages needed for AI dojo
+    pandas
+    scikit-learn
+    tensorflow
   ]);
 
   ida-free = pkgs.ida-free.overrideAttrs (oldAttrs: {
