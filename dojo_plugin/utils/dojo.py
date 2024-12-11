@@ -460,7 +460,7 @@ def dojo_git_command(dojo, *args, repo_path=None):
                           capture_output=True)
 
 
-def dojo_update(dojo):
+def dojo_update(dojo, branch_name="main"):
     if dojo.path.exists():
         old_commit = dojo_git_command(dojo, "rev-parse", "HEAD").stdout.decode().strip()
 
@@ -469,7 +469,7 @@ def dojo_update(dojo):
         os.rename(str(dojo.path), tmp_dir.name)
 
         dojo_git_command(dojo, "fetch", "--depth=1", "origin", repo_path=tmp_dir.name)
-        dojo_git_command(dojo, "reset", "--hard", "origin", repo_path=tmp_dir.name)
+        dojo_git_command(dojo, "reset", "--hard", f"origin/{branch_name}", repo_path=tmp_dir.name)
         dojo_git_command(dojo, "submodule", "update", "--init", "--recursive", repo_path=tmp_dir.name)
 
         try:
@@ -539,3 +539,40 @@ def get_current_dojo_challenge(user=None):
                 DojoChallenges.dojo == Dojos.from_id(container.labels.get("dojo.dojo_id")).first())
         .first()
     )
+
+
+def get_prev_cur_next_dojo_challenge(user=None, active=None):
+    container = get_current_container(user)
+    if not container:
+        return {
+        'previous':None,
+        'current':None,
+        'next':None
+        }
+
+    if active:
+        current = active
+    else:
+        current = get_current_dojo_challenge(user)
+
+    current_index = current.challenge_index
+    challenges = current.module.challenges
+
+    previous = challenges[current_index - 1] if current_index > 0 else None
+    next = challenges[current_index + 1] if current_index < (len(challenges) - 1) else None
+
+    return {
+        'previous':previous,
+        'current':current,
+        'next':next
+    }
+
+def get_branches(repository):
+    url = f'https://api.github.com/repos/{repository}/branches'
+    response = requests.get(url)
+    branches = []
+    if response.status_code == 200:
+        branches = [branch['name'] for branch in response.json()]
+    else:
+        print(f'Failed to fetch branches from {repository}: {response.status_code}')
+    return branches
