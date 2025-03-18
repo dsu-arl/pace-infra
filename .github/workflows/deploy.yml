@@ -1,0 +1,131 @@
+name: CI/CD for Flask App (Multi-Environment)
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - feature/*
+      - upstream/*
+
+jobs:
+  # Shared Build and Test Job
+  build-and-test:
+    runs-on: self-hosted # assumes self-hosted runner in internal network
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+      
+      - name: Run Tests
+        run: |
+          source venv/bin/activate
+          pytest tests/
+  
+  # Deploy to Prod (main branch)
+  deploy-prod:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    environment: production # link to production environment
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Production
+        run: |
+          rsync -avz --exclude '.git' ./ /var/www/prod_flask_app/
+          cd /var/www/prod_flask_app
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pkill gunicorn || true
+          nohup gunicorn --bind 0.0.0.0:5000 app:app &
+
+  # Deploy to Test (main branch)
+  deploy-test:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    environment: testing # link to testing environment
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Testing
+        run: |
+          rsync -avz --exclude '.git' ./ /var/www/test_flask_app/
+          cd /var/www/test_flask_app
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pkill gunicorn || true
+          nohup gunicorn --bind 0.0.0.0:5000 app:app &
+
+  # Deploy to Staging (dev branch)
+  deploy-staging:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/dev'
+    runs-on: self-hosted
+    environment: staging # link to staging environment
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Staging
+        run: |
+          rsync -avz --exclude '.git' ./ /var/www/staging_flask_app/
+          cd /var/www/staging_flask_app
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pkill gunicorn || true
+          nohup gunicorn --bind 0.0.0.0:5000 app:app &
+
+  # Deploy to Dev (feature/* and upstream/* branches)
+  deploy-dev:
+    needs: build-and-test
+    if: startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstrema/')
+    runs-on: self-hosted
+    environment: dev # link to dev environment
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Determine Target Dev Server
+        id: dev-server
+        run: |
+          # Replace hyphen with underscore for variable name
+          ACTOR_KEY=$(echo "${{ github.actor }}" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
+          SERVER="${{ vars[format('DEV_SERVER_{0}', ACTOR_KEY)] }}"
+          if [ -z "$SERVER" ]; then
+            echo "No dev server assigned for ${{ github.actor }} - skipping deployment"
+            exit 1
+          else
+            # Map server to directory
+            TARGET_DIR_VAR="${SERVER^^}_DIR"
+            TARGET_DIR="${{ secrets[$TARGET_DIR_VAR] }}"
+            echo "Deploying to $SERVER for ${{ github.actor }}"
+            echo "TARGET_DIR=$TARGET_DIR" >> $GITHUB_OUTPUT
+          fi
+      
+    #   - name: Deploy to Developer's Dev Server
+    #     if: steps.dev-server.outcome == 'success'
+    #     run: |
+    #       rsync -avz --exclude '.git' ./ ${{ steps.dev-server.outputs.TARGET_DIR }}/
+    #       cd ${{ steps.dev-server.outputs.TARGET_DIR }}
+    #       python3 -m venv venv
+    #       source venv/bin/activate
+    #       pip install -r requirements.txt
+    #       pkill gunicorn || true
+    #       nohup gunicorn --bind 0.0.0.0:5000 app:app &
