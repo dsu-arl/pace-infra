@@ -113,16 +113,11 @@ jobs:
       #     # Clone the repository and checkout the specific ref
       #     git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "$GITHUB_WORKSPACE"
       #     cd "$GITHUB_WORKSPACE"
-      
-      - name: Set Variables
-        id: set-vars
-        run: |
-          ACTOR_KEY=$(echo "${{ github.actor }}" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
 
       - name: Determine Target Dev Server
         id: dev-server
         run: |
-          # Replace hyphen with underscore for variable name
+          ACTOR_KEY=$(echo "${{ github.actor }}" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
           echo "${{ github.actor }}" | tr '-' '_' | tr '[:lower:]' '[:upper:]'
           echo "${{ vars.DEV_SERVER_CFORD23 }}"
           echo "$ACTOR_KEY"
