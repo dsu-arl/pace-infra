@@ -122,10 +122,14 @@ jobs:
             sudo apt-get update && sudo apt-get install -y jq
           fi
 
-          SERVER=$(echo '${{ secrets.DEV_SERVER_MAPPING }}' | jq -r ".[\"${{ github.actor }}\"]")
+          SERVER=$(echo '${{ vars.DEV_SERVER_MAPPING }}' | jq -r ".[\"${{ github.actor }}\"]")
           if [ "$SERVER" = "null" ] || [ -z "$SERVER" ]; then
             echo "No server found for ${{ github.actor }}"
             SERVER="none"
           else
             echo "Server from mapping: $SERVER"
+          fi
+
+          if "$SERVER" = "dev"; then
+            echo "Deploying to the dev server"
           fi
