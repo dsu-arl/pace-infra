@@ -120,6 +120,7 @@ jobs:
           ACTOR_KEY=$(echo "${{ github.actor }}" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
           SERVER_VAR="DEV_SERVER_$ACTOR_KEY"
           echo "SERVER_VAR is $SERVER_VAR"
+          echo "${{ vars.DEV_SERVER_CFORD23 }}"
 
           SERVER="${!SERVER_VAR}"
           if [ -z "$SERVER" ]; then
