@@ -118,7 +118,12 @@ jobs:
         id: dev-server
         run: |
           ACTOR_KEY=$(echo "${{ github.actor }}" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
-          SERVER="${{ vars[format('DEV_SERVER_{0}', ACTOR_KEY)] }}"
-          echo "${{ github.actor }}" | tr '-' '_' | tr '[:lower:]' '[:upper:]'
-          echo "${{ vars.DEV_SERVER_CFORD23 }}"
-          echo "$ACTOR_KEY"
+          SERVER_VAR="DEV_SERVER_$ACTOR_KEY"
+
+          SERVER="${!SERVER_VAR}"
+          if [ -z "$SERVER" ]; then
+            echo "No dev server assigned for ${{ github.actor }}"
+            SERVER="none"
+          fi
+          
+          echo "SERVER is $SERVER"
