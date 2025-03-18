@@ -3,7 +3,7 @@ name: CI/CD for Flask App (Multi-Environment)
 on:
   push:
     branches:
-      - main
+      - master
       - dev
       - feature/*
       - upstream/*
@@ -21,10 +21,10 @@ jobs:
           git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "$GITHUB_WORKSPACE"
           cd "$GITHUB_WORKSPACE"
   
-  # Deploy to Prod (main branch)
+  # Deploy to Prod (master branch)
   deploy-prod:
-    needs: build-and-test
-    if: github.ref == 'refs/heads/main'
+    needs: [build-and-test, deploy-test]
+    if: github.ref == 'refs/heads/master'
     runs-on: self-hosted
     environment: production # link to production environment
     steps:
@@ -47,10 +47,10 @@ jobs:
           pkill gunicorn || true
           nohup gunicorn --bind 0.0.0.0:5000 app:app &
 
-  # Deploy to Test (main branch)
+  # Deploy to Test (master branch)
   deploy-test:
     needs: build-and-test
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master'
     runs-on: self-hosted
     environment: testing # link to testing environment
     steps:
