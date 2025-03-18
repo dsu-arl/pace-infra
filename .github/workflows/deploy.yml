@@ -119,11 +119,12 @@ jobs:
         run: |
           ACTOR_KEY=$(echo "${{ github.actor }}" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
           SERVER_VAR="DEV_SERVER_$ACTOR_KEY"
+          echo "SERVER_VAR is $SERVER_VAR"
 
           SERVER="${!SERVER_VAR}"
           if [ -z "$SERVER" ]; then
             echo "No dev server assigned for ${{ github.actor }}"
             SERVER="none"
           fi
-          
+
           echo "SERVER is $SERVER"
