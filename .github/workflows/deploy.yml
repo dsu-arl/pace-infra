@@ -11,7 +11,7 @@ on:
 jobs:
   # Shared Build and Test Job
   build-and-test:
-    runs-on: self-hosted # assumes self-hosted runner in internal network
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         run: |
@@ -103,7 +103,7 @@ jobs:
   deploy-dev:
     needs: build-and-test
     if: startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     environment: dev # link to dev environment
     steps:
       - name: Checkout Repository
