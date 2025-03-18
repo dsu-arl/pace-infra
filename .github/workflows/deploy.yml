@@ -106,16 +106,17 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev # link to dev environment
     steps:
-      - name: Checkout Repository
-        run: |
-          # Ensure the workspace is clean
-          rm -rf "$GITHUB_WORKSPACE"/*
-          # Clone the repository and checkout the specific ref
-          git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "$GITHUB_WORKSPACE"
-          cd "$GITHUB_WORKSPACE"
+      # - name: Checkout Repository
+      #   run: |
+      #     # Ensure the workspace is clean
+      #     rm -rf "$GITHUB_WORKSPACE"/*
+      #     # Clone the repository and checkout the specific ref
+      #     git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "$GITHUB_WORKSPACE"
+      #     cd "$GITHUB_WORKSPACE"
       
       - name: Determine Target Dev Server
         id: dev-server
         run: |
           # Replace hyphen with underscore for variable name
           echo "${{ github.actor }}" | tr '-' '_' | tr '[:lower:]' '[:upper:]'
+          echo "${{ vars.DEV_SERVER_CFORD23 }}"
