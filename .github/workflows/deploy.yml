@@ -118,7 +118,7 @@ jobs:
         id: dev-server
         run: |
           ACTOR_KEY=$(echo "${{ github.actor }}" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
-          SERVER="${{ vars[format('DEV_SERVER_{0}', $ACTOR_KEY)] }}"
+          SERVER="${{ vars[format('DEV_SERVER_{0}', ACTOR_KEY)] }}"
           echo "${{ github.actor }}" | tr '-' '_' | tr '[:lower:]' '[:upper:]'
           echo "${{ vars.DEV_SERVER_CFORD23 }}"
           echo "$ACTOR_KEY"
