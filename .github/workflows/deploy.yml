@@ -130,6 +130,6 @@ jobs:
             echo "Server from mapping: $SERVER"
           fi
 
-          if "$SERVER" = "dev"; then
+          if [ "$SERVER" = "dev" ]; then
             echo "Deploying to the dev server"
           fi
