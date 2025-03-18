@@ -14,7 +14,12 @@ jobs:
     runs-on: self-hosted # assumes self-hosted runner in internal network
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        run: |
+          # Ensure the workspace is clean
+          rm -rf "$GITHUB_WORKSPACE"/*
+          # Clone the repository and checkout the specific ref
+          git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "$GITHUB_WORKSPACE"
+          cd "$GITHUB_WORKSPACE"
       
       - name: Set up Python
         run: |
@@ -37,7 +42,12 @@ jobs:
     environment: production # link to production environment
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        run: |
+          # Ensure the workspace is clean
+          rm -rf "$GITHUB_WORKSPACE"/*
+          # Clone the repository and checkout the specific ref
+          git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "$GITHUB_WORKSPACE"
+          cd "$GITHUB_WORKSPACE"
 
       - name: Deploy to Production
         run: |
@@ -58,7 +68,12 @@ jobs:
     environment: testing # link to testing environment
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        run: |
+          # Ensure the workspace is clean
+          rm -rf "$GITHUB_WORKSPACE"/*
+          # Clone the repository and checkout the specific ref
+          git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "$GITHUB_WORKSPACE"
+          cd "$GITHUB_WORKSPACE"
 
       - name: Deploy to Testing
         run: |
@@ -79,7 +94,12 @@ jobs:
     environment: staging # link to staging environment
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        run: |
+          # Ensure the workspace is clean
+          rm -rf "$GITHUB_WORKSPACE"/*
+          # Clone the repository and checkout the specific ref
+          git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "$GITHUB_WORKSPACE"
+          cd "$GITHUB_WORKSPACE"
 
       - name: Deploy to Staging
         run: |
@@ -100,7 +120,12 @@ jobs:
     environment: dev # link to dev environment
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        run: |
+          # Ensure the workspace is clean
+          rm -rf "$GITHUB_WORKSPACE"/*
+          # Clone the repository and checkout the specific ref
+          git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "$GITHUB_WORKSPACE"
+          cd "$GITHUB_WORKSPACE"
       
       - name: Determine Target Dev Server
         id: dev-server
