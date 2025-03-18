@@ -102,7 +102,7 @@ jobs:
   # Deploy to Dev (feature/* and upstream/* branches)
   deploy-dev:
     needs: build-and-test
-    if: startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstrema/')
+    if: startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')
     runs-on: self-hosted
     environment: dev # link to dev environment
     steps:
@@ -118,27 +118,4 @@ jobs:
         id: dev-server
         run: |
           # Replace hyphen with underscore for variable name
-          # ACTOR_KEY=$(echo "${{ github.actor }}" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
           echo "${{ github.actor }}" | tr '-' '_' | tr '[:lower:]' '[:upper:]'
-          SERVER="${{ vars[format('DEV_SERVER_{0}', ACTOR_KEY)] }}"
-          if [ -z "$SERVER" ]; then
-            echo "No dev server assigned for ${{ github.actor }} - skipping deployment"
-            exit 1
-          else
-            # Map server to directory
-            TARGET_DIR_VAR="${SERVER^^}_DIR"
-            TARGET_DIR="${{ secrets[$TARGET_DIR_VAR] }}"
-            echo "Deploying to $SERVER for ${{ github.actor }}"
-            echo "TARGET_DIR=$TARGET_DIR" >> $GITHUB_OUTPUT
-          fi
-      
-    #   - name: Deploy to Developer's Dev Server
-    #     if: steps.dev-server.outcome == 'success'
-    #     run: |
-    #       rsync -avz --exclude '.git' ./ ${{ steps.dev-server.outputs.TARGET_DIR }}/
-    #       cd ${{ steps.dev-server.outputs.TARGET_DIR }}
-    #       python3 -m venv venv
-    #       source venv/bin/activate
-    #       pip install -r requirements.txt
-    #       pkill gunicorn || true
-    #       nohup gunicorn --bind 0.0.0.0:5000 app:app &
