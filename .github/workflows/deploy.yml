@@ -42,7 +42,11 @@ jobs:
     steps:
       - name: Checkout Repository
         run: |
-          rm -rf "$GITHUB_WORKSPACE"/*
+          if [ -d "$GITHUB_WORKSPACE" ]; then
+            rm -rf "$GITHUB_WORKSPACE"/*
+            rm -rf "$GITHUB_WORKSPACE"/.[!.]*
+          fi
+
           git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "$GITHUB_WORKSPACE"
           cd "$GITHUB_WORKSPACE"
       
