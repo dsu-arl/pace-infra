@@ -13,11 +13,11 @@ env:
   DOCKER_RUN_BASE: |
     docker run --name ${{ vars.CONTAINER_NAME }} \
       --privileged \
-      -v "${{ vars.DEV_DOJO_PATH }}:/opt/pwn.college" \
+      -v "${{ vars.DOJO_PATH }}:/opt/pwn.college" \
       -v "${{ vars.DATA_PATH }}:/data" \
-      -e DOJO_HOST="${{ vars.DEV_DOJO_PATH }}" \
-      -e VIRTUAL_HOST="${{ vars.DEV_DOJO_PATH }}" \
-      -e LETSENCRYPT_HOST="${{ vars.DEV_DOJO_PATH }}" \
+      -e DOJO_HOST="${{ vars.DOJO_PATH }}" \
+      -e VIRTUAL_HOST="${{ vars.DOJO_PATH }}" \
+      -e LETSENCRYPT_HOST="${{ vars.DOJO_PATH }}" \
       -e USE_LETSENCRYPT="no" \
       -e DEFAULT_INSTALL_SELECTION="no" \
       -e INSTALL_TCPDUMP="yes" \
@@ -52,7 +52,7 @@ jobs:
       
       - name: Build Docker Image
         run: |
-          docker build -t pwncollege/dojo "${{ vars.DEV_DOJO_PATH }}"
+          docker build -t pwncollege/dojo "${{ vars.DOJO_PATH }}"
 
   # Deploy to Dev (feature/* and upstream/* branches)
   deploy-dev:
