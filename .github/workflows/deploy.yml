@@ -8,128 +8,120 @@ on:
       - feature/*
       - upstream/*
 
+env:
+  # Base docker run command with placeholders
+  DOCKER_RUN_BASE: |
+    docker run --name ${{ vars.CONTAINER_NAME }} \
+      --privileged \
+      -v "${{ vars.DOJO_PATH }}:/opt/pwn.college" \
+      -v "${{ vars.DATA_PATH }}:/data" \
+      -e DOJO_HOST="${{ vars.DOJO_HOST }}" \
+      -e VIRTUAL_HOST="${{ vars.DOJO_HOST }}" \
+      -e LETSENCRYPT_HOST="${{ vars.DOJO_HOST }}" \
+      -e USE_LETSENCRYPT="no" \
+      -e DEFAULT_INSTALL_SELECTION="no" \
+      -e INSTALL_TCPDUMP="yes" \
+      -e INSTALL_CAPSTONE="yes" \
+      -e INSTALL_RADARE2="yes" \
+      -e INSTALL_BURPSUITE="yes" \
+      -e INSTALL_BUSYBOX="yes" \
+      -e INSTALL_VIRTIOFSD="yes" \
+      -e INSTALL_GHIDRA="yes" \
+      -e INSTALL_GDB="yes" \
+      -e INSTALL_TOOLS_PIP="yes" \
+      -e INSTALL_TOOLS_APT="yes" \
+      -e CTF_NAME="${{ vars.CTF_NAME }}" \
+      -e CTF_DESC="'${{ vars.CTF_DESC }}'" \
+      -p 22:22 -p 80:80 -p 443:443 \
+      -d pwncollege/dojo
+
 jobs:
-  # Shared Build and Test Job
-  build-and-test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        run: |
-          # Ensure the workspace is clean
-          rm -rf "$GITHUB_WORKSPACE"/*
-          # Clone the repository and checkout the specific ref
-          git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "$GITHUB_WORKSPACE"
-          cd "$GITHUB_WORKSPACE"
-  
-  # Deploy to Prod (master branch)
-  deploy-prod:
-    needs: [build-and-test, deploy-test]
-    if: github.ref == 'refs/heads/master'
+  # Build Docker container
+  build:
     runs-on: self-hosted
-    environment: production # link to production environment
     steps:
       - name: Checkout Repository
         run: |
-          # Ensure the workspace is clean
           rm -rf "$GITHUB_WORKSPACE"/*
-          # Clone the repository and checkout the specific ref
           git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "$GITHUB_WORKSPACE"
           cd "$GITHUB_WORKSPACE"
-
-      - name: Deploy to Production
-        run: |
-          rsync -avz --exclude '.git' ./ /var/www/prod_flask_app/
-          cd /var/www/prod_flask_app
-          python3 -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pkill gunicorn || true
-          nohup gunicorn --bind 0.0.0.0:5000 app:app &
-
-  # Deploy to Test (master branch)
-  deploy-test:
-    needs: build-and-test
-    if: github.ref == 'refs/heads/master'
-    runs-on: self-hosted
-    environment: testing # link to testing environment
-    steps:
-      - name: Checkout Repository
-        run: |
-          # Ensure the workspace is clean
-          rm -rf "$GITHUB_WORKSPACE"/*
-          # Clone the repository and checkout the specific ref
-          git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "$GITHUB_WORKSPACE"
-          cd "$GITHUB_WORKSPACE"
-
-      - name: Deploy to Testing
-        run: |
-          rsync -avz --exclude '.git' ./ /var/www/test_flask_app/
-          cd /var/www/test_flask_app
-          python3 -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pkill gunicorn || true
-          nohup gunicorn --bind 0.0.0.0:5000 app:app &
-
-  # Deploy to Staging (dev branch)
-  deploy-staging:
-    needs: build-and-test
-    if: github.ref == 'refs/heads/dev'
-    runs-on: self-hosted
-    environment: staging # link to staging environment
-    steps:
-      - name: Checkout Repository
-        run: |
-          # Ensure the workspace is clean
-          rm -rf "$GITHUB_WORKSPACE"/*
-          # Clone the repository and checkout the specific ref
-          git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "$GITHUB_WORKSPACE"
-          cd "$GITHUB_WORKSPACE"
-
-      - name: Deploy to Staging
-        run: |
-          rsync -avz --exclude '.git' ./ /var/www/staging_flask_app/
-          cd /var/www/staging_flask_app
-          python3 -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pkill gunicorn || true
-          nohup gunicorn --bind 0.0.0.0:5000 app:app &
+      
+      # - name: Build Docker Image
+      #   run: |
+      #     docker build -t pwncollege/dojo "${{ vars.DOJO_PATH }}"
 
   # Deploy to Dev (feature/* and upstream/* branches)
   deploy-dev:
-    needs: build-and-test
+    needs: build
     if: startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')
-    runs-on: ubuntu-latest
-    environment: dev # link to dev environment
+    runs-on: self-hosted
+    environment: dev
     steps:
-      # - name: Checkout Repository
-      #   run: |
-      #     # Ensure the workspace is clean
-      #     rm -rf "$GITHUB_WORKSPACE"/*
-      #     # Clone the repository and checkout the specific ref
-      #     git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "$GITHUB_WORKSPACE"
-      #     cd "$GITHUB_WORKSPACE"
-
-      - name: Determine Target Dev Server
-        id: dev-server
+      - name: Testing Runner on pwncollege-dev
         run: |
-          # Install jq if not present (needed for JSON parsing)
-          if ! command -v jq >/dev/null 2>&1; then
-            sudo apt-get update && sudo apt-get install -y jq
-          fi
+          echo "This is running on the pwncollege-dev server"
+      # - name: Determine Target Dev Server
+      #   id: dev-server
+      #   run: |
+      #     # Install jq if not present (needed for JSON parsing)
+      #     if ! command -v jq >/dev/null 2>&1; then
+      #       sudo apt-get update && sudo apt-get install -y jq
+      #     fi
 
-          SERVER=$(echo '${{ vars.DEV_SERVER_MAPPING }}' | jq -r ".[\"${{ github.actor }}\"]")
-          if [ "$SERVER" = "null" ] || [ -z "$SERVER" ]; then
-            echo "No server found for ${{ github.actor }}"
-            SERVER="none"
-          else
-            echo "Server from mapping: $SERVER"
-          fi
+      #     SERVER=$(echo '${{ vars.DEV_SERVER_MAPPING }}' | jq -r ".[\"${{ github.actor }}\"]")
+      #     if [ "$SERVER" = "null" ] || [ -z "$SERVER" ]; then
+      #       echo "No server found for ${{ github.actor }} - canceling deployment"
+      #       exit 1
+      #     else
+      #       echo "Server from mapping: $SERVER"
+      #     fi
 
-          if [ "$SERVER" = "dev" ]; then
-            echo "Deploying to the dev server"
-          fi
+      #     if [ "$SERVER" = "dev" ]; then
+      #       IP="${{ vars.DEV_IP }}"
+      #       echo
+      #     fi
+      
+      # - name: Stop and Remove Existing Container
+      #   run: |
+      #     docker rm -f myapp-container || true
+      
+      # - name: Run Docker Container
+      #   run: |
+      #     docker run -d --name myapp-container -p 8080:80 myapp:latest
+      
+      # - name: Print Deployment Status
+      #   run: |
+      #     echo "Deployed to internal server on port 8080"
+  
+  # Deploy to Staging (dev branch)
+  deploy-staging:
+    needs: build
+    if: github.ref == 'refs/heads/dev'
+    runs-on: self-hosted
+    environment: staging
+    steps:
+      - name: Deploy Docker container to Staging environment
+        run: |
+          echo "Deploying Docker container to staging environment"
+
+  # Deploy to Testing (master branch)
+  deploy-testing:
+    needs: build
+    if: github.ref == 'refs/heads/master'
+    runs-on: self-hosted
+    environment: testing
+    steps:
+      - name: Deploy Docker container to Testing environment
+        run: |
+          echo "Deploying Docker container to testing environment"
+    
+  # Deploy to Production (master branch)
+  deploy-prod:
+    needs: deploy-testing
+    if: github.ref == 'refs/heads/master'
+    runs-on: self-hosted
+    environment: production
+    steps:
+      - name: Deploy Docker container to Production environment
+        run: |
+          echo "Deploying Docker container to production environment"
