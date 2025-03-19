@@ -46,9 +46,9 @@ jobs:
           git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "$GITHUB_WORKSPACE"
           cd "$GITHUB_WORKSPACE"
       
-      # - name: Build Docker Image
-      #   run: |
-      #     docker build -t pwncollege/dojo "${{ vars.DOJO_PATH }}"
+      - name: Build Docker Image
+        run: |
+          docker build -t pwncollege/dojo "${{ vars.DOJO_PATH }}"
 
   # Deploy to Dev (feature/* and upstream/* branches)
   deploy-dev:
