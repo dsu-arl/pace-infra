@@ -52,8 +52,7 @@ jobs:
       
       - name: Build Docker Image
         run: |
-          echo "DOJO_PATH: ${{ vars.DOJO_PATH }}"
-          docker build -t pwncollege/dojo "${{ vars.DOJO_PATH }}"
+          docker build -t pwncollege/dojo ${{ vars.DOJO_PATH }}
 
   # Deploy to Dev (feature/* and upstream/* branches)
   deploy-dev:
