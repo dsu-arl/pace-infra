@@ -10,8 +10,81 @@ on:
 
 jobs:
   # Build Docker container
-  build:
-    runs-on: self-hosted
+  build-dev:
+    runs-on: [self-hosted, dev-runner]
+    if: (startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')) && github.actor == vars.DEV_SERVER_USER
+    environment: dev
+    steps:
+      - name: Checkout Repository
+        run: |
+          if [ -d "${{ vars.DOJO_PATH }}" ]; then
+            rm -rf "${{ vars.DOJO_PATH }}"/*
+            rm -rf "${{ vars.DOJO_PATH }}"/.[!.]*
+          fi
+
+          git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" ${{ vars.DOJO_PATH }}
+          cd ${{ vars.DOJO_PATH }}
+      
+      - name: Build Docker Image
+        run: |
+          docker build -t pwncollege/dojo ${{ vars.DOJO_PATH }}
+  
+  build-dev2:
+    runs-on: [self-hosted, dev2-runner]
+    if: (startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')) && github.actor == vars.DEV2_SERVER_USER
+    environment: dev
+    steps:
+      - name: Checkout Repository
+        run: |
+          if [ -d "${{ vars.DOJO_PATH }}" ]; then
+            rm -rf "${{ vars.DOJO_PATH }}"/*
+            rm -rf "${{ vars.DOJO_PATH }}"/.[!.]*
+          fi
+
+          git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" ${{ vars.DOJO_PATH }}
+          cd ${{ vars.DOJO_PATH }}
+      
+      - name: Build Docker Image
+        run: |
+          docker build -t pwncollege/dojo ${{ vars.DOJO_PATH }}
+
+  build-staging:
+    runs-on: [self-hosted, staging-runner]
+    steps:
+      - name: Checkout Repository
+        run: |
+          if [ -d "${{ vars.DOJO_PATH }}" ]; then
+            rm -rf "${{ vars.DOJO_PATH }}"/*
+            rm -rf "${{ vars.DOJO_PATH }}"/.[!.]*
+          fi
+
+          git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" ${{ vars.DOJO_PATH }}
+          cd ${{ vars.DOJO_PATH }}
+      
+      - name: Build Docker Image
+        run: |
+          docker build -t pwncollege/dojo ${{ vars.DOJO_PATH }}
+
+  build-testing:
+    runs-on: [self-hosted, testing-runner]
+    steps:
+      - name: Checkout Repository
+        run: |
+          if [ -d "${{ vars.DOJO_PATH }}" ]; then
+            rm -rf "${{ vars.DOJO_PATH }}"/*
+            rm -rf "${{ vars.DOJO_PATH }}"/.[!.]*
+          fi
+
+          git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" ${{ vars.DOJO_PATH }}
+          cd ${{ vars.DOJO_PATH }}
+      
+      - name: Build Docker Image
+        run: |
+          docker build -t pwncollege/dojo ${{ vars.DOJO_PATH }}
+
+  build-prod:
+    needs: deploy-testing
+    runs-on: [self-hosted, prod-runner]
     steps:
       - name: Checkout Repository
         run: |
@@ -29,35 +102,11 @@ jobs:
 
   # Deploy to Dev (feature/* and upstream/* branches)
   deploy-dev:
-    needs: build
-    if: startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')
-    runs-on: self-hosted
+    needs: build-dev
+    if: (startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')) && github.actor == vars.DEV_SERVER_USER
+    runs-on: [self-hosted, dev-runner]
     environment: dev
     steps:
-      - name: Testing Runner on pwncollege-dev
-        run: |
-          echo "This is running on the pwncollege-dev server"
-      # - name: Determine Target Dev Server
-      #   id: dev-server
-      #   run: |
-      #     # Install jq if not present (needed for JSON parsing)
-      #     if ! command -v jq >/dev/null 2>&1; then
-      #       sudo apt-get update && sudo apt-get install -y jq
-      #     fi
-
-      #     SERVER=$(echo '${{ vars.DEV_SERVER_MAPPING }}' | jq -r ".[\"${{ github.actor }}\"]")
-      #     if [ "$SERVER" = "null" ] || [ -z "$SERVER" ]; then
-      #       echo "No server found for ${{ github.actor }} - canceling deployment"
-      #       exit 1
-      #     else
-      #       echo "Server from mapping: $SERVER"
-      #     fi
-
-      #     if [ "$SERVER" = "dev" ]; then
-      #       IP="${{ vars.DEV_IP }}"
-      #       echo
-      #     fi
-      
       - name: Stop and Remove Existing Container
         run: |
           docker rm -f dojo
@@ -90,9 +139,48 @@ jobs:
 
           docker exec dojo dojo wait
   
+  # Deploy to dev2 environment (feature/* and upstream/* branches)
+  deploy-dev2:
+    needs: build-dev2
+    if: (startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')) && github.actor == vars.DEV2_SERVER_USER
+    runs-on: [self-hosted, dev2-runner]
+    environment: dev
+    steps:
+      - name: Stop and Remove Existing Container
+        run: |
+          docker rm -f dojo
+      
+      - name: Run Docker Container
+        run: |
+          docker run --name dojo \
+            --privileged \
+            -v "${{ vars.DOJO_PATH }}:/opt/pwn.college" \
+            -v "${{ vars.DATA_PATH }}:/data" \
+            -e DOJO_HOST="${{ vars.DEV2_DOJO_HOST }}" \
+            -e VIRTUAL_HOST="${{ vars.DEV2_DOJO_HOST }}" \
+            -e LETSENCRYPT_HOST="${{ vars.DEV2_DOJO_HOST }}" \
+            -e USE_LETSENCRYPT="no" \
+            -e DEFAULT_INSTALL_SELECTION="no" \
+            -e INSTALL_TCPDUMP="yes" \
+            -e INSTALL_CAPSTONE="yes" \
+            -e INSTALL_RADARE2="yes" \
+            -e INSTALL_BURPSUITE="yes" \
+            -e INSTALL_BUSYBOX="yes" \
+            -e INSTALL_VIRTIOFSD="yes" \
+            -e INSTALL_GHIDRA="yes" \
+            -e INSTALL_GDB="yes" \
+            -e INSTALL_TOOLS_PIP="yes" \
+            -e INSTALL_TOOLS_APT="yes" \
+            -e CTF_NAME="" \
+            -e CTF_DESC="" \
+            -p 22:22 -p 80:80 -p 443:443 \
+            -d pwncollege/dojo
+
+          docker exec dojo dojo wait
+
   # Deploy to Staging (dev branch)
   deploy-staging:
-    needs: build
+    needs: build-staging
     if: github.ref == 'refs/heads/dev'
     runs-on: self-hosted
     environment: staging
@@ -103,7 +191,7 @@ jobs:
 
   # Deploy to Testing (master branch)
   deploy-testing:
-    needs: build
+    needs: build-testing
     if: github.ref == 'refs/heads/master'
     runs-on: self-hosted
     environment: testing
@@ -114,7 +202,7 @@ jobs:
     
   # Deploy to Production (master branch)
   deploy-prod:
-    needs: deploy-testing
+    needs: build-prod
     if: github.ref == 'refs/heads/master'
     runs-on: self-hosted
     environment: production
