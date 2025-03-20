@@ -8,33 +8,6 @@ on:
       - feature/*
       - upstream/*
 
-env:
-  # Base docker run command with placeholders
-  DOCKER_RUN_BASE: |
-    docker run --name ${{ vars.CONTAINER_NAME }} \
-      --privileged \
-      -v "${{ vars.DOJO_PATH }}:/opt/pwn.college" \
-      -v "${{ vars.DATA_PATH }}:/data" \
-      -e DOJO_HOST="${{ vars.DOJO_PATH }}" \
-      -e VIRTUAL_HOST="${{ vars.DOJO_PATH }}" \
-      -e LETSENCRYPT_HOST="${{ vars.DOJO_PATH }}" \
-      -e USE_LETSENCRYPT="no" \
-      -e DEFAULT_INSTALL_SELECTION="no" \
-      -e INSTALL_TCPDUMP="yes" \
-      -e INSTALL_CAPSTONE="yes" \
-      -e INSTALL_RADARE2="yes" \
-      -e INSTALL_BURPSUITE="yes" \
-      -e INSTALL_BUSYBOX="yes" \
-      -e INSTALL_VIRTIOFSD="yes" \
-      -e INSTALL_GHIDRA="yes" \
-      -e INSTALL_GDB="yes" \
-      -e INSTALL_TOOLS_PIP="yes" \
-      -e INSTALL_TOOLS_APT="yes" \
-      -e CTF_NAME="" \
-      -e CTF_DESC="" \
-      -p 22:22 -p 80:80 -p 443:443 \
-      -d pwncollege/dojo
-
 jobs:
   # Build Docker container
   build:
@@ -85,17 +58,37 @@ jobs:
       #       echo
       #     fi
       
-      # - name: Stop and Remove Existing Container
-      #   run: |
-      #     docker rm -f myapp-container || true
+      - name: Stop and Remove Existing Container
+        run: |
+          docker rm -f dojo
       
-      # - name: Run Docker Container
-      #   run: |
-      #     docker run -d --name myapp-container -p 8080:80 myapp:latest
-      
-      # - name: Print Deployment Status
-      #   run: |
-      #     echo "Deployed to internal server on port 8080"
+      - name: Run Docker Container
+        run: |
+          docker run --name dojo \
+            --privileged \
+            -v "${{ vars.DOJO_PATH }}:/opt/pwn.college" \
+            -v "${{ vars.DATA_PATH }}:/data" \
+            -e DOJO_HOST="${{ vars.DEV_DOJO_HOST }}" \
+            -e VIRTUAL_HOST="${{ vars.DEV_DOJO_HOST }}" \
+            -e LETSENCRYPT_HOST="${{ vars.DEV_DOJO_HOST }}" \
+            -e USE_LETSENCRYPT="no" \
+            -e DEFAULT_INSTALL_SELECTION="no" \
+            -e INSTALL_TCPDUMP="yes" \
+            -e INSTALL_CAPSTONE="yes" \
+            -e INSTALL_RADARE2="yes" \
+            -e INSTALL_BURPSUITE="yes" \
+            -e INSTALL_BUSYBOX="yes" \
+            -e INSTALL_VIRTIOFSD="yes" \
+            -e INSTALL_GHIDRA="yes" \
+            -e INSTALL_GDB="yes" \
+            -e INSTALL_TOOLS_PIP="yes" \
+            -e INSTALL_TOOLS_APT="yes" \
+            -e CTF_NAME="" \
+            -e CTF_DESC="" \
+            -p 22:22 -p 80:80 -p 443:443 \
+            -d pwncollege/dojo
+
+          docker exec dojo dojo wait
   
   # Deploy to Staging (dev branch)
   deploy-staging:
