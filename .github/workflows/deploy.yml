@@ -30,8 +30,8 @@ env:
       -e INSTALL_GDB="yes" \
       -e INSTALL_TOOLS_PIP="yes" \
       -e INSTALL_TOOLS_APT="yes" \
-      -e CTF_NAME="${{ vars.CTF_NAME }}" \
-      -e CTF_DESC="'${{ vars.CTF_DESC }}'" \
+      -e CTF_NAME="" \
+      -e CTF_DESC="" \
       -p 22:22 -p 80:80 -p 443:443 \
       -d pwncollege/dojo
 
