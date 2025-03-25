@@ -3,16 +3,16 @@ import traceback
 import datetime
 import sys
 
-from flask import Blueprint, render_template, abort, send_file, redirect, url_for, Response, stream_with_context, request
+from flask import Blueprint, render_template, abort, send_file, redirect, url_for, Response, stream_with_context, request, g
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.sql import and_
+from sqlalchemy.sql import and_, or_
 from CTFd.plugins import bypass_csrf_protection
 from CTFd.models import db, Solves, Users
 from CTFd.utils.decorators import authed_only
 from CTFd.utils.user import get_current_user, is_admin
 from CTFd.utils.helpers import get_infos
 
-from ..utils import get_all_containers, render_markdown
+from ..utils import get_current_container, get_all_containers, render_markdown
 from ..utils.stats import get_container_stats, get_dojo_stats
 from ..utils.dojo import dojo_route, get_current_dojo_challenge, get_prev_cur_next_dojo_challenge, dojo_update, dojo_admins_only, get_branches
 from ..models import Dojos, DojoUsers, DojoStudents, DojoModules, DojoMembers, DojoChallenges
@@ -50,58 +50,57 @@ def listing(dojo):
 
 @dojo.route("/<dojo>/<path>")
 @dojo.route("/<dojo>/<path>/")
+@dojo.route("/<dojo>/<path>/<subpath>")
+@dojo.route("/<dojo>/<path>/<subpath>/")
 @dojo_route
-def view_dojo_path(dojo, path):
+def view_dojo_path(dojo, path, subpath=None):
     module = DojoModules.query.filter_by(dojo=dojo, id=path).first()
     if module:
+        if subpath:
+            DojoChallenges.query.filter_by(dojo=dojo, module=module, id=subpath).first_or_404()
         return view_module(dojo, module)
-    elif path in dojo.pages:
+    elif path in dojo.pages and not subpath:
         return view_page(dojo, path)
     else:
         abort(404)
 
 
-@dojo.route("/active-module/")
 @dojo.route("/active-module")
+@dojo.route("/active-module/")
 @authed_only
 def active_module():
-    import json
-    user = get_current_user()
-    active = get_current_dojo_challenge()
-    challs = get_prev_cur_next_dojo_challenge(active=active)
-    if active:
-    #return a json of the active challenge
+    active_challenge = get_current_dojo_challenge()
+    if not active_challenge:
+        return {}
+
+    g.dojo = active_challenge.dojo
+
+    current_challenge = active_challenge
+    current_index = current_challenge.challenge_index
+    challenges = current_challenge.module.challenges
+
+    previous_challenge = challenges[current_index - 1] if current_index > 0 else None
+    next_challenge = challenges[current_index + 1] if current_index < (len(challenges) - 1) else None
+
+    def challenge_info(challenge):
+        if not challenge:
+            return {}
         return {
-            "c_previous": {
-                "module_name": challs['previous'].module.name ,
-                "module_id": challs['previous'].module.id,
-                "dojo_name": challs['previous'].dojo.name,
-                "dojo_reference_id": challs['previous'].dojo.reference_id,
-                "challenge_id": challs['previous'].challenge_id,
-                "challenge_name": challs['previous'].name,
-                "challenge_reference_id": challs['previous'].id,
-            } if challs['previous'] is not None else {},
-            "c_current": {
-                "module_name": challs['current'].module.name,
-                "module_id": challs['current'].module.id,
-                "dojo_name": challs['current'].dojo.name,
-                "dojo_reference_id": challs['current'].dojo.reference_id,
-                "challenge_id": challs['current'].challenge_id,
-                "challenge_name": challs['current'].name,
-                "challenge_reference_id": challs['current'].id,
-                "description": render_markdown(challs['current'].description).strip(),
-            },
-            "c_next": {
-                "module_name": challs['next'].module.name if challs['next'] else None,
-                "module_id": challs['next'].module.id,
-                "dojo_name": challs['next'].dojo.name,
-                "dojo_reference_id": challs['next'].dojo.reference_id,
-                "challenge_id": challs['next'].challenge_id,
-                "challenge_name": challs['next'].name,
-                "challenge_reference_id": challs['next'].id,
-            } if challs['next'] is not None else {},
+            "module_name": challenge.module.name,
+            "module_id": challenge.module.id,
+            "dojo_name": challenge.dojo.name,
+            "dojo_reference_id": challenge.dojo.reference_id,
+            "challenge_id": challenge.challenge_id,
+            "challenge_name": challenge.name,
+            "challenge_reference_id": challenge.id,
+            "description": render_markdown(challenge.description).strip() if challenge == current_challenge else None,
         }
-    return {}
+
+    return {
+        "c_previous": challenge_info(previous_challenge),
+        "c_current": challenge_info(current_challenge),
+        "c_next": challenge_info(next_challenge),
+    }
 
 
 @dojo.route("/dojo/<dojo>")
@@ -225,11 +224,7 @@ def dojo_solves(dojo, solves_code=None, format="csv"):
     solves_query = (
         dojo
         .solves(ignore_visibility=True)
-        .join(DojoModules, and_(
-            DojoModules.dojo_id == DojoChallenges.dojo_id,
-            DojoModules.module_index == DojoChallenges.module_index
-        ))
-        .filter(DojoUsers.user_id != None)
+        .filter(or_(DojoUsers.user_id != None, ~Users.hidden))
         .order_by(DojoChallenges.module_index, DojoChallenges.challenge_index, Solves.date)
         .with_entities(Solves.user_id, Users.name, DojoModules.id, DojoChallenges.id, Solves.date)
     )
@@ -238,7 +233,7 @@ def dojo_solves(dojo, solves_code=None, format="csv"):
 
     if format == "csv":
         def stream():
-            yield "user_id,user_name,module,challenge,time\n"
+            yield "user_id,module,challenge,time\n"
             for user_id, _, module, challenge, time in solves:
                 yield f"{user_id},{module},{challenge},{time}\n"
         headers = {"Content-Disposition": "attachment; filename=data.csv"}
@@ -275,7 +270,8 @@ def view_module(dojo, module):
                 continue
             date = str(date)
             until = " ".join(
-                f"{count} {unit}{'s' if count != 1 else ''}" for count, unit in zip(
+                f"{count} {unit}{'s' if count != 1 else ''}"
+                for count, unit in zip(
                     (until.days, *divmod(until.seconds // 60, 60)),
                     ("day", "hour", "minute")
                 ) if count
@@ -308,6 +304,7 @@ def view_module(dojo, module):
 
 def view_page(dojo, page):
     if (dojo.path / page).is_file():
+        assert dojo.privileged or dojo.official
         path = (dojo.path / page).resolve()
         return send_file(path)
 
@@ -318,6 +315,7 @@ def view_page(dojo, page):
     elif (dojo.path / page).is_dir():
         user = get_current_user()
         if user and (dojo.path / page / f"{user.id}").is_file():
+            assert dojo.privileged or dojo.official
             path = (dojo.path / page / f"{user.id}").resolve()
             return send_file(path)
         elif user and (dojo.path / page / f"{user.id}.md").is_file():

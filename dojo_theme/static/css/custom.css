@@ -1,17 +1,127 @@
-body {
-    background: #151515 url(../img/dojo/bkg.png) 0 0;
+:root {
+    --brand-black: #000000;
+    --brand-white: #ffffff;
+    --brand-light-gray: #747474;
+    --brand-dark-gray: #484848;
+    --brand-green: #78be20;
+    --brand-gold: #ffc627;
+    --brand-blue: #00a3e0;
+
+    --old-brand-green: #78be20;
+    --old-brand-gold: #ffc627;
+    --old-brand-blue: #00a3e0;
 }
 
-.modal-content {
-    background-color: #151515 !important;
+.theme-old {
+    --brand-green: #b5e853;
+    --brand-gold: #b5e853;
+    --brand-blue: #63c0f5;
+    --old-brand-green: #b5e853;
+    --old-brand-gold: #b5e853;
+    --old-brand-blue: #63c0f5;
+    /* --old-brand-gold: #f4bf75; */
+}
+
+.brand-black {
+    color: var(--brand-black) !important;
+}
+
+.brand-white {
+    color: var(--brand-white) !important;
+}
+
+.brand-light-gray {
+    color: var(--brand-light-gray) !important;
+}
+
+.brand-dark-gray {
+    color: var(--brand-dark-gray) !important;
+}
+
+.brand-green {
+    color: var(--brand-green) !important;
+}
+
+.brand-gold {
+    color: var(--brand-gold) !important;
+}
+
+.brand-blue {
+    color: var(--brand-blue) !important;
+}
+
+.brand-dot {
+    color: var(--brand-black);
+    background: linear-gradient(to right,
+        transparent 10%,
+        var(--brand-gold) 10%,
+        var(--brand-gold) 90%,
+        transparent 90%);
+    display: inline-block;
+}
+
+.brand-dot-white {
+    color: var(--brand-black);
+    background: linear-gradient(to right,
+        transparent 10%,
+        var(--brand-white) 10%,
+        var(--brand-white) 90%,
+        transparent 90%);
+    display: inline-block;
+}
+
+.brand-mono, .nav-link {
+    font-family: 'Space Mono', monospace;
+}
+
+.brand-mono-bold {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+}
+
+.brand-blink {
+    animation: brand-blinker 12s step-end infinite;
+}
+
+body {
+    background: #101010;
+}
+
+.container {
+    font-family: 'Space Grotesk', Helvetica, sans-serif;
+    font-weight: 100;
+    font-size: 1.2rem;
+}
+
+b {
+    font-weight: 700;
+}
+
+h1, h2, h3, h4 {
+    font-family: 'Space Grotesk';
+    font-weight: 500;
+    color: var(--brand-green);
+}
+
+.wordmark {
+    font-family: 'Space Mono' !important;
+    font-weight: 700;
+    font-size: clamp(1rem, 10vw, 5rem);
+    white-space: nowrap;
 }
 
 body, table, .form-control:focus, .close {
     color: #eaeaea !important;
 }
 
-.navbar-brand, .nav-link, h1, h2, #syllabus h3, #syllabus h4, .navbar-pulldown {
-    color: #b5e853 !important;
+nav {
+    padding: 0.25rem 1rem !important;
+    background-color: #272727;
+    border-bottom: 1px dashed var(--brand-light-gray);
+}
+
+.nav-link, .navbar-pulldown {
+    color: var(--brand-gold) !important;
 }
 
 .navbar > .container {
@@ -19,7 +129,7 @@ body, table, .form-control:focus, .close {
 }
 
 a {
-    color: #63c0f5;
+    color: var(--old-brand-blue);
     text-shadow: 0 0 5px rgba(104,182,255,0.15);
 }
 
@@ -27,29 +137,20 @@ a:hover {
     text-decoration: none;
 }
 
-nav {
-    border-bottom: 1px dashed #b5e853;
+h4 {
+    color: var(--old-brand-blue);
+    text-shadow: rgba(104, 182, 255, 0.15) 0px 0px 5px;
 }
 
-h4 {
-    color: rgb(99, 192, 245);
-    text-shadow: rgba(104, 182, 255, 0.15) 0px 0px 5px;
+p[data-hide="true"] {
+  font-size: 1px;
+  opacity: 0;
 }
 
 .close-link {
     border: none;
     background-color: inherit;
     padding: 0.5em 1em;
-}
-
-@keyframes navbar-slide-out {
-    0% {
-        transform: translateY(0);
-    }
-    100% {
-        transform: translateY(-100%);
-        display: hidden;
-    }
 }
 
 .navbar-hiding {
@@ -89,20 +190,7 @@ h4 {
 }
 
 .modal-content {
-    border: 1px dashed #b5e853;
-}
-
-.navbar-brand, .nav-link, body, p, h1, h2, h3, h4, td {
-    font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace !important;
-}
-
-.navbar-brand {
-    font-weight: bold;
-    text-shadow: 0 1px 1px rgba(0,0,0,0.1),0 0 5px rgba(181,232,83,0.1),0 0 10px rgba(181,232,83,0.1);
-}
-
-.navbar-brand::before {
-    content: "./"
+    border: 1px dashed var(--brand-light-gray);
 }
 
 .nav-tabs {
@@ -133,7 +221,7 @@ h4 {
     display: none;
 }
 
-.bg-dark, .jumbotron, .nav-link.active, .form-control {
+.jumbotron, .nav-link.active, .form-control {
     background-color: inherit !important;
 }
 
@@ -147,7 +235,7 @@ h4 {
 }
 
 .card-body .progress-bar {
-  background-color: #63c0f5;
+  background-color: var(--old-brand-blue);
   opacity: 30%;
   height: 8%;
   width: 0;
@@ -188,9 +276,9 @@ h4 {
 }
 
 .card-small {
-    width: 15em;
-    height: 15em;
-    margin: 1em;
+    width: 13em;
+    height: 13em;
+    margin: 0.5em;
     padding: 0em;
     background-color: rgba(255, 255, 255, 0.05);
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
@@ -217,18 +305,22 @@ h4 {
     top: 75%;
     transform: translate(-50%, -50%);
     width: 100%;
-    color: rgb(234, 234, 234);
+    color: #eaeaea;
     font-size: 0.75em;
 }
 
 .card-icon {
-  width: 50%;
-  font-size: 48px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  filter: drop-shadow(0px 0px 3px black);
+    width: calc(100% - 40px);
+    font-size: 64px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    filter: drop-shadow(0px 0px 3px black);
+}
+
+.card-icon > img {
+    width: 75%;
 }
 
 .accordion-item {
@@ -250,6 +342,10 @@ h4 {
     margin: 0px;
     padding: 0px !important;
     float: left;
+    white-space: normal;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .challenge-active {
@@ -258,7 +354,7 @@ h4 {
 
 .challenge-solved {
     -webkit-text-stroke: 1px #222;
-    -webkit-text-fill-color: #b5e853;
+    -webkit-text-fill-color: var(--old-brand-green);
 }
 
 .challenge-unsolved {
@@ -271,11 +367,6 @@ h4 {
     float: right;
     font-size: 0.75em;
     color: #ddd;
-}
-
-.scoreboard-name {
-    color: rgb(99, 192, 245);
-    text-shadow: rgba(104, 182, 255, 0.15) 0px 0px 5px;
 }
 
 .scoreboard-symbol {
@@ -329,7 +420,7 @@ table {
 
 th {
   text-align: left;
-  border-bottom: 1px dashed #b5e853;
+  border-bottom: 1px dashed var(--brand-light-gray);
   padding: 5px 10px;
 }
 
@@ -340,12 +431,11 @@ td {
 hr {
   height: 0;
   border: 0;
-  border-bottom: 1px dashed #b5e853;
-  color: #b5e853;
+  border-bottom: 1px dashed var(--brand-light-gray);
 }
 
 .module-dojo a {
-    color: #b5e853;
+    color: var(--old-brand-green);
 }
 
 .module-due-date {
@@ -358,7 +448,7 @@ pre {
     padding: 0px 0px 0px 0px;
 }
 
-code{
+code {
     color: #61afef;
 }
 
@@ -442,4 +532,192 @@ code{
 
 .hljs-strong {
     font-weight: bold;
+}
+
+.popup-overlay {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    justify-content: flex-end;
+    align-items: flex-end;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.popup-content {
+    position: relative;
+    background-color: var(--brand-black);
+    padding: 2.5rem 1.5rem 1.5rem;
+    border-radius: 10px 10px 0 0;
+    text-align: center;
+    width: 340px;
+    margin: 0 20px 0px 0;
+    color: #FFFFFF;
+    border-left: 2px solid var(--brand-green);
+    border-right: 2px solid var(--brand-green);
+    border-top: 2px solid var(--brand-green);
+    box-shadow: 0 0 20px rgba(120,190,32,0.3);
+    transform: translateY(100%);
+    animation: slideUp 0.3s ease-out forwards;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.popup-content h1 {
+    font-family: 'Space Grotesk', monospace;
+    font-size: 1.8rem;
+    margin: 0.5rem 0;
+}
+
+.popup-content p {
+    font-family: 'Space Grotesk', monospace;
+    font-size: 1.25rem;
+    margin: 0.5rem 0;
+}
+
+.emoji-display {
+    font-size: 4rem;
+    margin: 1rem 0;
+    line-height: 1;
+}
+
+.belt-image {
+    width: 150px;
+    height: auto;
+    margin: 0 auto;
+}
+
+.logo-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: auto;
+    opacity: 0.2;
+    z-index: 0;
+    margin: 0;
+}
+
+
+.popup-content>*:not(.logo-image) {
+    position: relative;
+    z-index: 1;
+}
+
+.social-share {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 0.5rem;
+}
+
+.share-button {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 0.5rem;
+    gap: 0.5rem;
+    background-color: var(--brand-black);
+    color: #FFFFFF !important;
+    padding: 0.5rem 1rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9rem;
+    border-radius: 20px;
+    text-decoration: none;
+    border: 1px solid var(--brand-green);
+    transition: all 0.3s ease;
+}
+
+.share-button img {
+    height: 16px;
+    width: auto;
+    filter: brightness(0) invert(1);
+}
+
+.share-button:hover {
+    background-color: var(--brand-dark-gray);
+    border: 1px solid var(--brand-green);
+}
+
+#closePopup {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--brand-green);
+    cursor: pointer;
+  }
+
+@keyframes navbar-slide-out {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(-100%);
+        display: hidden;
+    }
+}
+
+@keyframes brand-blinker {
+    0% {
+        color: var(--brand-black);
+        background: var(--brand-gold);
+    }
+    5% {
+        color: var(--brand-green);
+        background: transparent;
+    }
+    10% {
+        color: var(--brand-black);
+        background: var(--brand-gold);
+    }
+    15% {
+        color: var(--brand-green);
+        background: transparent;
+    }
+    20% {
+        color: var(--brand-black);
+        background: var(--brand-gold);
+    }
+    25% {
+        color: var(--brand-green);
+        background: transparent;
+    }
+    30% {
+        color: var(--brand-black);
+        background: var(--brand-gold);
+    }
+    35% {
+        color: var(--brand-green);
+        background: transparent;
+    }
+    40% {
+        color: var(--brand-black);
+        background: var(--brand-gold);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(120%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        background-color: rgba(0, 0, 0, 0);
+    }
+    to {
+        background-color: rgba(0, 0, 0, 0.8);
+    }
 }

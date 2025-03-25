@@ -71,9 +71,10 @@ class Dojos(db.Model):
     password = db.Column(db.String(128))
 
     data = db.Column(db.JSON)
-    data_fields = ["type", "award", "course", "pages", "importable", "comparator"]
+    data_fields = ["type", "award", "course", "pages", "privileged", "importable", "comparator"]
     data_defaults = {
         "pages": [],
+        "privileged": False,
         "importable": True,
     }
 
@@ -425,7 +426,6 @@ class DojoModules(db.Model):
     def solves(self, **kwargs):
         return DojoChallenges.solves(module=self, **kwargs)
 
-
     @hybrid_method
     def visible(self, when=None):
         when = when or datetime.datetime.utcnow()
@@ -536,6 +536,9 @@ class DojoChallenges(db.Model):
             .join(DojoChallenges, and_(
                 DojoChallenges.challenge_id==Solves.challenge_id,
                 ))
+            .join(DojoModules, and_(
+                DojoModules.dojo_id == DojoChallenges.dojo_id,
+                DojoModules.module_index == DojoChallenges.module_index))
             .outerjoin(DojoUsers, and_(
                 DojoUsers.user_id == Solves.user_id,
                 DojoUsers.dojo_id == DojoChallenges.dojo_id,
@@ -576,15 +579,12 @@ class DojoChallenges(db.Model):
     @property
     def path(self):
         return (self.module.path / self.id
-                if not self.path_override else
+                if not self.path_override or (self.module.dojo.official and os.path.exists(self.module.path / self.id)) else
                 pathlib.Path(self.path_override))
 
     @property
     def image(self):
-        if self.data.get("image"):
-            assert any(isinstance(dojo_admin.user, Admins) for dojo_admin in self.dojo.admins), "Custom images are only allowed for admin dojos"
-            return self.data["image"]
-        return "pwncollege-challenge"
+        return self.data.get("image") or "pwncollege/challenge-legacy"
 
     @property
     def reference_id(self):
@@ -748,14 +748,43 @@ class SSHKeys(db.Model):
     __repr__ = columns_repr(["user", "value"])
 
 
+class DiscordUserActivity(db.Model):
+    __tablename__ = "discord_user_activity"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.BigInteger, index=True)
+    source_user_id = db.Column(db.BigInteger)
+    timestamp = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    type = db.Column(db.String(80), index=True)
+    guild_id = db.Column(db.BigInteger)
+    channel_id = db.Column(db.BigInteger)
+    message_id = db.Column(db.BigInteger)
+    message_timestamp = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+
 class DiscordUsers(db.Model):
     __tablename__ = "discord_users"
     user_id = db.Column(
         db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
-    discord_id = db.Column(db.Text, unique=True)
+    discord_id = db.Column(db.Integer, unique=True)
 
     user = db.relationship("Users")
+
+    def thanks(self, start=None, end=None):
+        return DiscordUserActivity.query.filter(
+            DiscordUserActivity.type == "thanks",
+            DiscordUserActivity.user_id == self.discord_id,
+            DiscordUserActivity.message_timestamp >= start if start else True,
+            DiscordUserActivity.message_timestamp <= end if end else True
+        )
+
+    def memes(self, start=None, end=None):
+        return DiscordUserActivity.query.filter(
+            DiscordUserActivity.user_id == self.discord_id,
+            DiscordUserActivity.message_timestamp >= start if start else True,
+            DiscordUserActivity.message_timestamp <= end if end else True,
+            DiscordUserActivity.type == "memes",
+        )
 
     __repr__ = columns_repr(["user", "discord_id"])
 

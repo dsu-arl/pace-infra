@@ -52,7 +52,17 @@ case "$ACTION" in
         )
         CONTAINER="user_$DOJO_UID"
         shift
-        docker exec $DOCKER_ARGS $USER_SWITCH "$CONTAINER" bash
+
+        NODES=( unix:///var/run/docker.sock )
+        NODES+=( $(wg | grep "allowed ips" | awk -F " |/" '{print $5}') )
+        for NODE in ${NODES[@]}
+        do
+            if docker -H $NODE ps | grep -q "$CONTAINER$"
+            then
+                docker -H "$NODE" exec $DOCKER_ARGS $USER_SWITCH "$CONTAINER" bash
+                exit $?
+            fi
+        done
         ;;
 
     # HELP: compose ARGS: run a docker compose command with the config.env file loaded

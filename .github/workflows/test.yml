@@ -37,7 +37,13 @@ jobs:
       - name: Setup firefox
         uses: browser-actions/setup-firefox@latest
       - name: Install test dependencies
-        run: pip install pytest pytest-dependency requests selenium
+        run: |
+          pip install \
+            pytest \
+            pytest-dependency \
+            pytest-github-actions-annotate-failures \
+            requests \
+            selenium
 
       - name: Make docker cache dir owned by our user
         run: |
@@ -91,6 +97,8 @@ jobs:
       - name: Build and start services
         run: |
           docker exec dojo-test dojo wait || (docker exec dojo-test dojo compose logs && false)
+          docker exec dojo-test docker pull pwncollege/challenge-simple
+          docker exec dojo-test docker tag pwncollege/challenge-simple pwncollege/challenge-legacy
           docker exec dojo-test docker image ls
 
       - name: Wait for services to start
