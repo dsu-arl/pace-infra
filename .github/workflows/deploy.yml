@@ -53,16 +53,16 @@ jobs:
       - name: Checkout Repository
         run: |
           if [ -d "${{ vars.DOJO_PATH }}" ]; then
-            rm -rf "${{ vars.DOJO_PATH }}"/*
-            rm -rf "${{ vars.DOJO_PATH }}"/.[!.]*
+            cd "${{ vars.DOJO_PATH }}"
+            git pull origin "${{ github.ref_name }}"
+          else
+            git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "${{ vars.DOJO_PATH }}"
+            cd "${{ vars.DOJO_PATH }}"
           fi
-
-          git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" ${{ vars.DOJO_PATH }}
-          cd ${{ vars.DOJO_PATH }}
       
       - name: Build Docker Image
         run: |
-          docker build -t pwncollege/dojo ${{ vars.DOJO_PATH }}
+          docker build -t pwncollege/dojo "${{ vars.DOJO_PATH }}"
 
   build-testing:
     runs-on: [self-hosted, testing-runner]
