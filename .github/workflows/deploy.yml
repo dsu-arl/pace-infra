@@ -1,12 +1,12 @@
 name: PACE Infrastructure Pipeline
 
-on:
-  push:
-    branches:
-      - master
-      - dev
-      - feature/*
-      - upstream/*
+# on:
+#   push:
+#     branches:
+#       - master
+#       - dev
+#       - feature/*
+#       - upstream/*
 
 jobs:
   # Build Docker container
