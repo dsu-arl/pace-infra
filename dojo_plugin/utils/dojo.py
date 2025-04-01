@@ -446,7 +446,8 @@ def dojo_clone(repository, private_key):
     url = f"https://github.com/{repository}"
     if requests.head(url).status_code != 200:
         url = f"git@github.com:{repository}"
-    subprocess.run(["git", "clone", "--depth=1", "--recurse-submodules", url, clone_dir.name],
+    #subprocess.run(["git", "clone", "--depth=1", "--recurse-submodules", url, clone_dir.name],
+    subprocess.run(["git", "clone", "--recurse-submodules", url, clone_dir.name],
                    env={
                        "GIT_SSH_COMMAND": f"ssh -i {key_file.name}",
                        "GIT_TERMINAL_PROMPT": "0",
@@ -534,11 +535,18 @@ def dojo_update(dojo, branch_name="main"):
 
         tmp_dir = tempfile.TemporaryDirectory(dir=DOJOS_TMP_DIR)
 
-        os.rename(str(dojo.path), tmp_dir.name)
+        # Don't rename dojo path to temp path to fix branch selection
+        # os.rename(str(dojo.path), tmp_dir.name)
+        print(f"(DEBUG) Dojo path: {str(dojo.path)}", file=sys.stderr)
 
-        dojo_git_command(dojo, "fetch", "--depth=1", "origin", repo_path=tmp_dir.name)
-        dojo_git_command(dojo, "reset", "--hard", f"origin/{branch_name}", repo_path=tmp_dir.name)
-        dojo_git_command(dojo, "submodule", "update", "--init", "--recursive", repo_path=tmp_dir.name)
+        # dojo_git_command(dojo, "fetch", "--depth=1", "origin", repo_path=tmp_dir.name)
+        # dojo_git_command(dojo, "reset", "--hard", f"origin/{branch_name}", repo_path=tmp_dir.name)
+        # dojo_git_command(dojo, "submodule", "update", "--init", "--recursive", repo_path=tmp_dir.name)
+        # Don't do a shallow fetch for now to fix branch selection
+        # Also, use actual dojo path instead of temp path
+        dojo_git_command(dojo, "fetch", "origin", repo_path=str(dojo.path))
+        dojo_git_command(dojo, "reset", "--hard", f"origin/{branch_name}", repo_path=str(dojo.path))
+        dojo_git_command(dojo, "submodule", "update", "--init", "--recursive", repo_path=str(dojo.path))
 
         try:
             _assert_no_symlinks(tmp_dir.name)
@@ -546,8 +554,9 @@ def dojo_update(dojo, branch_name="main"):
             dojo_git_command(dojo, "reset", "--hard", old_commit, repo_path=tmp_dir.name)
             dojo_git_command(dojo, "submodule", "update", "--init", "--recursive", repo_path=tmp_dir.name)
             raise
-        finally:
-            os.rename(tmp_dir.name, str(dojo.path))
+        # Skip renaming the temp path back to the dojo path to fix branch selection
+        # finally:
+        #     os.rename(tmp_dir.name, str(dojo.path))
     else:
         tmpdir = dojo_clone(dojo.repository, dojo.private_key)
         os.rename(tmpdir.name, str(dojo.path))
