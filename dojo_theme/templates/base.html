@@ -7,10 +7,43 @@
     <title>{{ Configs.ctf_name }}</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="{{ Configs.ctf_small_icon }}" type="image/x-icon">
+
+    <meta property="og:title" content="pwn.college">
+    <meta property="og:description" content="Learn to Hack!">
+    <meta property="og:image" content="{{ url_for('views.themes', path='img/dojo/ninja.png', _external=True) }}">
+
+    <link rel="icon" href="{{ url_for('views.themes', path='img/favicon.png') }}">
     <link rel="stylesheet" href="{{ url_for('views.themes', path='css/fonts.css') }}">
     <link rel="stylesheet" href="{{ url_for('views.themes', path='css/main.css') }}">
     <link rel="stylesheet" href="{{ url_for('views.themes', path='css/core.css') }}">
+    <link rel="preload" href="{{ url_for('views.themes', path='font/SpaceMono-Regular.ttf') }}" as="font" type="font/ttf">
+    <link rel="preload" href="{{ url_for('views.themes', path='font/SpaceMono-Bold.ttf') }}" as="font" type="font/ttf">
+    <link rel="preload" href="{{ url_for('views.themes', path='font/SpaceGrotesk-VariableFont_wght.ttf') }}" as="font" type="font/ttf">
+    <style>
+      @font-face {
+        font-family: 'Space Mono';
+        src: url("{{ url_for('views.themes', path='font/SpaceMono-Regular.ttf') }}") format('truetype');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: 'Space Mono';
+        src: url("{{ url_for('views.themes', path='font/SpaceMono-Bold.ttf') }}") format('truetype');
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: 'Space Grotesk';
+        src: url("{{ url_for('views.themes', path='font/SpaceGrotesk-VariableFont_wght.ttf') }}") format('truetype');
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: swap;
+      }
+    </style>
     <link rel="stylesheet" href="{{ url_for('views.themes', path='css/custom.css') }}">
     {% block stylesheets %}
     {% endblock %}
@@ -25,8 +58,8 @@
 	  'start': {{ Configs.start | tojson }},
 	  'end': {{ Configs.end | tojson }},
 	  'theme_settings': {{ Configs.theme_settings | tojson }},
-          'dojo': "{{ dojo_id if dojo else "" }}",
-          'module': "{{ module_id if module else "" }}"
+          'dojo': "{{ dojo_id if dojo else '' }}",
+          'module': "{{ module_id if module else '' }}"
       }
     </script>
     {{ Configs.theme_header }}
@@ -58,6 +91,7 @@
 
     <script defer src="{{ url_for('views.themes', path='js/dojo/util.js') }}"></script>
     <script defer src="{{ url_for('views.themes', path='js/dojo/navbar.js') }}"></script>
+    <script defer src="{{ url_for('views.themes', path='js/dojo/popup.js') }}"></script>
 
     {% block scripts %}
     {% endblock %}

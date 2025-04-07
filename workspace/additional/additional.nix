@@ -1,7 +1,7 @@
 { pkgs }:
 
 let
-  pythonEnv = pkgs.python3.withPackages (ps: with ps; [
+  pythonPackages = ps: with ps; [
     angr
     asteval
     flask
@@ -9,8 +9,10 @@ let
     psutil
     pwntools
     pycryptodome
+    pyroute2
     r2pipe
     requests
+    ropper
     scapy
     selenium
     beautifulsoup4
@@ -19,65 +21,44 @@ let
     pandas
     scikit-learn
     tensorflow
-  ]);
+  ];
 
-  ida-free = pkgs.ida-free.overrideAttrs (oldAttrs: {
-    # This patch fixes IDA free to make sure libssl is correctly loaded in order to use the decompiler; this should be removed once the issue is fixed upstream.
-    # https://github.com/NixOS/nixpkgs/blob/nixos-24.05/pkgs/by-name/id/ida-free/package.nix#L116
-    preInstall = ''
-    eval _"$(declare -f wrapProgram)"
-    wrapProgram() {
-      local program="$1"
-      shift
-      _wrapProgram \
-        "$program" \
-        --prefix LD_LIBRARY_PATH : ${pkgs.lib.getLib pkgs.openssl}/lib \
-        "$@"
-    }
-    '';
-  });
+  pythonEnv = pkgs.python3.withPackages pythonPackages;
+
+  tools = with pkgs; {
+    build = [ gcc gnumake cmake qemu ];
+
+    compression = [ zip unzip gzip gnutar ];
+
+    system = [ htop rsync openssh nftables ];
+
+    editors = [ vim neovim emacs ];
+
+    terminal = [ tmux screen ];
+
+    network = [ netcat-openbsd tcpdump wireshark termshark nmap burpsuite ];
+
+    debugging = [ strace ltrace gdb pwndbg gef ];
+
+    reversing = [ ghidra ida-free radare2 cutter angr-management binaryninja-free ];
+
+    web = [ firefox geckodriver ];
+
+    exploitation = [ aflplusplus rappel ropgadget sage ];
+  };
 
 in
 {
-  packages = with pkgs; [
-    (lib.hiPrio pythonEnv)
-
-    gcc
-    gnumake
-
-    qemu
-
-    strace
-    gdb
-    pwndbg
-    gef
-    openssh
-    netcat-openbsd
-
-    vim
-    emacs
-    nano
-
-    ghidra
-    ida-free
-    radare2
-    # TODO: angr-management
-    # TODO: binary-ninja
-
-    wireshark
-    nmap
-    tcpdump
-    firefox
-    geckodriver
-
-    aflplusplus
-    rappel
-    ropgadget
-
-    sage
-
-    jupyter
-
-    # TODO: apt-tools
-  ];
+  packages = with pkgs;
+    [ (lib.hiPrio pythonEnv) ]
+    ++ tools.build
+    ++ tools.compression
+    ++ tools.system
+    ++ tools.editors
+    ++ tools.terminal
+    ++ tools.network
+    ++ tools.debugging
+    ++ tools.reversing
+    ++ tools.web
+    ++ tools.exploitation;
 }

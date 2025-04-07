@@ -135,7 +135,7 @@ def redirect_user_socket(user, port, url_path):
 
 def render_markdown(s):
     raw_html = build_markdown(s or "")
-    if "dojo" in g and g.dojo.official:
+    if "dojo" in g and (g.dojo.official or g.dojo.privileged):
         return Markup(raw_html)
 
     markdown_tags = [
@@ -152,6 +152,7 @@ def render_markdown(s):
         "*": ["id"],
         "img": ["src", "alt", "title"],
         "a": ["href", "alt", "title"],
+        "p": ["data-hide"]
     }
     clean_html = bleach.clean(raw_html, tags=markdown_tags, attributes=markdown_attrs)
     return Markup(clean_html)

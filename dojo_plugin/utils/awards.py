@@ -5,7 +5,7 @@ from CTFd.models import db, Users
 from flask import url_for
 
 from .discord import get_discord_roles, get_discord_member, add_role, send_message
-from ..models import Dojos, Belts, Emojis
+from ..models import Dojos, Belts, Emojis, DiscordUsers
 
 
 BELT_ORDER = [ "orange", "yellow", "green", "purple", "blue", "brown", "red", "black" ]
@@ -16,17 +16,13 @@ BELT_REQUIREMENTS = {
     "blue": "software-exploitation",
 }
 
-def belt_asset(color):
-    belt = color + ".svg" if color in BELT_ORDER else "white.svg"
-    return url_for("views.themes", path=f"img/dojo/{belt}")
-
 def get_user_emojis(user):
     emojis = [ ]
     for dojo in Dojos.query.all():
         emoji = dojo.award and dojo.award.get('emoji', None)
         if not emoji:
             continue
-        if dojo.completed(user):
+        if dojo.challenges and dojo.completed(user):
             emojis.append((emoji, dojo.name, dojo.hex_dojo_id))
     return emojis
 
@@ -102,7 +98,8 @@ def update_awards(user):
         db.session.commit()
         current_belts.append(belt)
 
-    discord_member = get_discord_member(user.id)
+    discord_user = DiscordUsers.query.filter_by(user=user).first()
+    discord_member = discord_user and get_discord_member(discord_user.discord_id)
     discord_roles = get_discord_roles()
     for belt in BELT_REQUIREMENTS:
         if belt not in current_belts:
@@ -111,11 +108,9 @@ def update_awards(user):
         missing_role = discord_member and discord_roles.get(belt_role) not in discord_member["roles"]
         if not missing_role:
             continue
-        user_mention = f"<@{discord_member['user']['id']}>"
-        message = f"{user_mention} earned their {belt_role}! :tada:"
-        add_role(discord_member["user"]["id"], belt_role)
-        send_message(message, "belting-ceremony")
-        cache.delete_memoized(get_discord_member, user.id)
+        add_role(discord_user.discord_id, belt_role)
+        send_message(f"<@{discord_user.discord_id}> earned their {belt_role}! :tada:", "belting-ceremony")
+        cache.delete_memoized(get_discord_member, discord_user.discord_id)
 
     current_emojis = get_user_emojis(user)
     for emoji,dojo_name,dojo_id in current_emojis:

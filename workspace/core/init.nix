@@ -31,16 +31,18 @@ let
     fi
 
     mkdir -p /home/hacker /root
-    mkdir -p /etc && touch /etc/passwd /etc/group
+    mkdir -p /etc /etc/profile.d && touch /etc/passwd /etc/group
     echo "root:x:0:0:root:/root:/run/dojo/bin/bash" >> /etc/passwd
     echo "hacker:x:1000:1000:hacker:/home/hacker:/run/dojo/bin/bash" >> /etc/passwd
     echo "sshd:x:112:65534::/run/sshd:/usr/sbin/nologin" >> /etc/passwd
     echo "root:x:0:" >> /etc/group
     echo "hacker:x:1000:" >> /etc/group
-
     echo "PATH=\"/run/challenge/bin:/run/workspace/bin:$IMAGE_PATH\"" > /etc/environment
+    ln -sfT /run/dojo/etc/profile.d/99-dojo-workspace.sh /etc/profile.d/99-dojo-workspace.sh
 
     echo $DOJO_AUTH_TOKEN > /run/dojo/var/auth_token
+
+    echo "Initialized."
 
     read DOJO_FLAG
     echo $DOJO_FLAG | install -m 400 /dev/stdin /flag
@@ -48,9 +50,7 @@ let
     exec > /run/dojo/var/root/init.log 2>&1
     chmod 600 /run/dojo/var/root/init.log
 
-    if [ "$DOJO_MODE" = "privileged" ]; then
-      touch /run/dojo/var/root/privileged
-    fi
+    chown 1000:1000 /home/hacker && chmod 755 /home/hacker
 
     if [ -x "/challenge/.init" ]; then
         PATH="/run/challenge/bin:$IMAGE_PATH" /challenge/.init
@@ -61,6 +61,12 @@ let
     exec "$@"
   '';
 
+  profile = pkgs.writeText "dojo-profile" ''
+    if [[ "$PATH" != "/run/challenge/bin:/run/workspace/bin:"* ]]; then
+      export PATH="/run/challenge/bin:/run/workspace/bin:$PATH"
+    fi
+  '';
+
 in pkgs.stdenv.mkDerivation {
   name = "init";
   buildInputs = [ pkgs.bash ];
@@ -68,8 +74,9 @@ in pkgs.stdenv.mkDerivation {
 
   installPhase = ''
     runHook preInstall
-    mkdir -p $out/bin
+    mkdir -p $out/bin $out/etc/profile.d
     cp ${initScript} $out/bin/dojo-init
+    cp ${profile} $out/etc/profile.d/99-dojo-workspace.sh
     runHook postInstall
   '';
 }
