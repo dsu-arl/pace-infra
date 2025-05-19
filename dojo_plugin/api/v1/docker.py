@@ -416,3 +416,4 @@ class DockerPanic(Resource):
         user = get_current_user()
         logger.info(f"PANIC initiated by admin user {user.id}. Killing all workspace containers")
         remove_all_containers()
+        logger.info("Panic complete")
