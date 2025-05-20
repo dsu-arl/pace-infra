@@ -411,8 +411,8 @@ class RunDocker(Resource):
 
 @docker_namespace.route("panic")
 class DockerPanic(Resource):
-    @admins_only
     @bypass_csrf_protection
+    @admins_only
     def post(self):
         user = get_current_user()
         logger.info(f"PANIC initiated by admin user {user.id}. Killing all workspace containers")
