@@ -13,8 +13,9 @@ from flask import abort, request, current_app
 from flask_restx import Namespace, Resource
 from CTFd.cache import cache
 from CTFd.models import Users
+from CTFd.plugins import bypass_csrf_protection
 from CTFd.utils.user import get_current_user, is_admin
-from CTFd.utils.decorators import authed_only, admins_only, bypass_csrf_protection
+from CTFd.utils.decorators import authed_only, admins_only
 from CTFd.exceptions import UserNotFoundException, UserTokenExpiredException
 
 from ...config import HOST_DATA_PATH, INTERNET_FOR_ALL, SECCOMP, USER_FIREWALL_ALLOWED
