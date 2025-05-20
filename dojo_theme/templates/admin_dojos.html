@@ -4,7 +4,7 @@
 <div class="jumbotron">
   <div class="container">
     <h1>All Dojos</h1>
-    <button class="btn btn-danger" data-toggle="modal" data-target="#panicModal">Docker Panic (Kill all workspace containers)</button>
+    <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#panicModal">Docker Panic (Kill all workspace containers)</button>
   </div>
 </div>
 <div class="container">
@@ -27,21 +27,25 @@
     <hr>
     {% endfor %}
 </div>
-<div id="panicModal" class="modal fade" tabindex="-1" role="dialog">
+<div id="panicModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="panicModalTitle" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Modal title</h5>
+        <h5 class="modal-title" id="panicModalTitle">Docker Panic</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body">
-        <p>Modal body text goes here.</p>
+        <p>This will attempt to kill and remove all currently running workspace containers.</p>
+        <p>Use this if the server becomes overloaded during an event.</p>
+        <p>If this is unsuccessful, you can manually panic using the following command within the dojo container:</p>
+        <pre>docker rm -f $(docker ps -aqf "name=user_*")</pre>
+        <p>Are you sure you want to panic?</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary">Save changes</button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-danger">Confirm Panic</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
       </div>
     </div>
   </div>
