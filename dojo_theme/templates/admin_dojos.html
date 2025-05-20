@@ -45,6 +45,7 @@
       </div>
       <div class="modal-footer">
         <form action={{ url_for('pwncollege_api.docker_docker_panic') }} method="post">
+            <input type="hidden" value="{{ nonce }}" name="nonce"> 
             <input type="submit" value="Confirm Panic" class="btn btn-danger">
         </form>
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
