@@ -39,7 +39,7 @@
       <div class="modal-body">
         <p>This will attempt to kill and remove all currently running workspace containers.</p>
         <p>Use this if the server becomes overloaded during an event.</p>
-        <p>If this is unsuccessful, you can manually panic using the following command within the dojo container:</p>
+        <p>If this is unsuccessful, you can manually panic using the following command within the outer dojo container:</p>
         <pre>docker rm -f $(docker ps -aqf "name=user_*")</pre>
         <p>Are you sure you want to panic?</p>
       </div>
