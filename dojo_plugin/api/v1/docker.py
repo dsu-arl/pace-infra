@@ -417,5 +417,11 @@ class DockerPanic(Resource):
     def post(self):
         user = get_current_user()
         logger.info(f"PANIC initiated by admin user {user.id}. Killing all workspace containers")
-        remove_all_containers()
+        try:
+            remove_all_containers()
+        except Exception as e:
+            logger.exception(f'PANIC Failed with error {e}')
+            return {"success": False, "error": e}
         logger.info("Panic complete")
+
+        return {"success": True}
