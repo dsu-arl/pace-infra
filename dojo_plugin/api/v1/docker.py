@@ -13,7 +13,6 @@ from flask import abort, request, current_app
 from flask_restx import Namespace, Resource
 from CTFd.cache import cache
 from CTFd.models import Users
-from CTFd.plugins import bypass_csrf_protection
 from CTFd.utils.user import get_current_user, is_admin
 from CTFd.utils.decorators import authed_only, admins_only
 from CTFd.exceptions import UserNotFoundException, UserTokenExpiredException
@@ -412,8 +411,7 @@ class RunDocker(Resource):
 
 @docker_namespace.route("/panic")
 class DockerPanic(Resource):
-    @bypass_csrf_protection
-    @authed_only
+    @admins_only
     def post(self):
         user = get_current_user()
         logger.info(f"PANIC initiated by admin user {user.id}. Killing all workspace containers")
