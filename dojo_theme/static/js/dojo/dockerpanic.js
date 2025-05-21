@@ -9,7 +9,7 @@ function dockerPanic(event) {
     result_message.html(panic_message);
     var dot_max = 5;
     var dot_counter = 0;
-    setTimeout(function loadmsg() {
+    const panic_interval_id = setInterval(function loadmsg() {
         if (dot_counter < dot_max - 1){
             result_message.append(".");
             dot_counter++;
@@ -18,7 +18,6 @@ function dockerPanic(event) {
             result_message.html(panic_message);
             dot_counter = 0;
         }
-        setTimeout(loadmsg, 500);
     }, 500);
 
     CTFd.fetch('/pwncollege_api/v1/docker/panic', {
@@ -41,6 +40,7 @@ function dockerPanic(event) {
         return response.json();
     }).then(function (result) {
         var result_message = panic_modal.find('#panicResult');
+        clearInterval(panic_interval_id);
 
         if (result.success) {
             var message = 'Panic Completed!'
@@ -55,6 +55,7 @@ function dockerPanic(event) {
 
         panic_modal.find("#panicConfirm").prop("disabled", false);
     }).catch(function (error) {
+        clearInterval(panic_interval_id);
         console.error(error);
         var result_message = panic_modal.find('#panicResult');
         result_message.html("Submission request failed: " + ((error || {}).message || error));
