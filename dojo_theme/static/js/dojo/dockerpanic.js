@@ -1,30 +1,27 @@
 function dockerPanic(event) {
     event.preventDefault();
     const panic_button = $(event.currentTarget);
+    const panic_modal = $('#panicModal');
+    var result_message = panic_modal.find('#panicResult')
+    panic_button.prop("disabled", true)
     
-    var result_notification = item.find('#result-notification');
-    var result_message = item.find('#result-message');
-    result_notification.removeClass('alert-danger');
-    result_notification.addClass('alert alert-warning alert-dismissable text-center');
-    result_message.html("Loading.");
-    result_notification.slideDown();
+    const panic_message = "Stopping all workspace containers.";
+    result_message.html(panic_message);
     var dot_max = 5;
     var dot_counter = 0;
     setTimeout(function loadmsg() {
-        if (result_message.html().startsWith("Loading")) {
-            if (dot_counter < dot_max - 1){
-                result_message.append(".");
-                dot_counter++;
-            }
-            else {
-                result_message.html("Loading.");
-                dot_counter = 0;
-            }
-            setTimeout(loadmsg, 500);
+        if (dot_counter < dot_max - 1){
+            result_message.append(".");
+            dot_counter++;
         }
+        else {
+            result_message.html(panic_message);
+            dot_counter = 0;
+        }
+        setTimeout(loadmsg, 500);
     }, 500);
 
-    CTFd.fetch('/pwncollege_api/v1/docker', {
+    CTFd.fetch('/pwncollege_api/v1/docker/panic', {
         method: 'POST',
         credentials: 'same-origin',
         headers: {
@@ -43,46 +40,28 @@ function dockerPanic(event) {
         }
         return response.json();
     }).then(function (result) {
-        var result_notification = item.find('#result-notification');
-        var result_message = item.find('#result-message');
-
-        result_notification.removeClass();
+        var result_message = panic_modal.find('#panicResult');
 
         if (result.success) {
-            var message = `Challenge successfully started! You can interact with it through a <a href="/workspace/code" target="dojo_workspace">VSCode Workspace</a> or a <a href="/workspace/desktop" target="dojo_workspace">GUI Desktop Workspace</a>.`;
+            var message = 'Panic Completed!'
             result_message.html(message);
-            result_notification.addClass('alert alert-info alert-dismissable text-center');
-
-            $(".challenge-active").removeClass("challenge-active");
-            item.find(".challenge-name").addClass("challenge-active");
-            setTimeout(() => updateNavbarDropdown(), 1000);
         }
         else {
             var message = "";
             message += "Error:";
-            message += "<br>";
             message += "<code>" + result.error + "</code>";
-            message += "<br>";
             result_message.html(message);
-            result_notification.addClass('alert alert-warning alert-dismissable text-center');
         }
 
-        result_notification.slideDown();
-        item.find("#challenge-start").removeClass("disabled-button");
-        item.find("#challenge-start").prop("disabled", false);
-        item.find("#challenge-practice").removeClass("disabled-button");
-        item.find("#challenge-practice").prop("disabled", false);
-
-        setTimeout(function() {
-            item.find(".alert").slideUp();
-            item.find("#challenge-submit").removeClass("disabled-button");
-            item.find("#challenge-submit").prop("disabled", false);
-        }, 60000);
+        panic_modal.find("#panicConfirm").prop("disabled", false);
     }).catch(function (error) {
         console.error(error);
-        var result_message = item.find('#result-message');
+        var result_message = panic_modal.find('#panicResult');
         result_message.html("Submission request failed: " + ((error || {}).message || error));
-        result_notification.addClass('alert alert-warning alert-dismissable text-center');
+        panic_modal.find("#panicConfirm").prop("disabled", false);
     })
 }
 
+$(() => {
+    $("#panicConfirm").click(dockerPanic);
+});
