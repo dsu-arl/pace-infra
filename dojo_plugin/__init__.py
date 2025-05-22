@@ -26,6 +26,7 @@ from .pages.workspace import workspace
 from .pages.sensai import sensai
 from .pages.users import users
 from .pages.settings import settings_override
+from .pages.auth import logout_override
 from .pages.discord import discord
 from .pages.course import course
 from .pages.canvas import sync_canvas_user, canvas
@@ -129,6 +130,7 @@ def load(app):
     app.view_functions["views.static_html"] = static_html_override
     app.view_functions["views.settings"] = settings_override
     app.view_functions["challenges.listing"] = dojos_override
+    app.view_functions["auth.logout"] = logout_override
     del app.view_functions["scoreboard.listing"]
     del app.view_functions["users.private"]
     del app.view_functions["users.public"]
