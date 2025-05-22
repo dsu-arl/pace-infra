@@ -65,4 +65,8 @@ function dockerPanic(event) {
 
 $(() => {
     $("#panicConfirm").click(dockerPanic);
+    $("#panicModal").on('show.bs.modal', function (event) {
+        var result_message = $(this).find('#panicResult');
+        result_message.html('Ready to panic');
+    });
 });
