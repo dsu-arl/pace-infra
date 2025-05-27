@@ -798,7 +798,7 @@ class UserChallengePreferences(db.Model):
 
     stop_on_logout = db.Column(db.Boolean, default=True)
 
-    __repr__ = columns_repr("user", "stop_on_logout")
+    __repr__ = columns_repr(["user", "stop_on_logout"])
 
 class Belts(Awards):
     __mapper_args__ = {"polymorphic_identity": "belt"}
