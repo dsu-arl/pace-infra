@@ -5,7 +5,7 @@ from CTFd.utils.helpers import get_infos, markup
 from CTFd.utils.decorators import authed_only
 from CTFd.utils.user import get_current_user
 
-from ..models import SSHKeys, DiscordUsers
+from ..models import SSHKeys, DiscordUsers, UserChallengePreferences
 from ..config import DISCORD_CLIENT_ID
 from ..utils.discord import get_discord_member, discord_avatar_asset
 
@@ -23,6 +23,11 @@ def settings_override():
                                         .with_entities(DiscordUsers.discord_id).scalar())
 
     prevent_name_change = get_config("prevent_name_change")
+
+    chall_pref = UserChallengePreferences.query.filter_by(user_id=user.id).first()
+
+    if chall_pref is None:
+        chall_pref = UserChallengePreferences(user_id=user.id, stop_on_logout=True)
 
     if get_config("verify_emails") and not user.verified:
         confirm_url = markup(url_for("auth.confirm"))
@@ -44,4 +49,5 @@ def settings_override():
         discord_avatar_asset=discord_avatar_asset,
         prevent_name_change=prevent_name_change,
         infos=infos,
+        chall_pref=chall_pref,
     )
