@@ -788,6 +788,17 @@ class DiscordUsers(db.Model):
 
     __repr__ = columns_repr(["user", "discord_id"])
 
+class UserChallengePreferences(db.Model):
+    __tablename__ = "user_challenge_preferences"
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+
+    user = db.relationship("Users")
+
+    stop_on_logout = db.Column(db.Boolean, default=True)
+
+    __repr__ = columns_repr(["user", "stop_on_logout"])
 
 class Belts(Awards):
     __mapper_args__ = {"polymorphic_identity": "belt"}
