@@ -14,7 +14,7 @@ from flask_restx import Namespace, Resource
 from CTFd.cache import cache
 from CTFd.models import Users
 from CTFd.utils.user import get_current_user, is_admin
-from CTFd.utils.decorators import authed_only
+from CTFd.utils.decorators import authed_only, admins_only
 from CTFd.exceptions import UserNotFoundException, UserTokenExpiredException
 
 from ...config import HOST_DATA_PATH, INTERNET_FOR_ALL, SECCOMP, USER_FIREWALL_ALLOWED
@@ -26,6 +26,7 @@ from ...utils import (
     serialize_user_flag,
     user_docker_client,
     user_ipv4,
+    get_all_containers,
 )
 from ...utils.dojo import dojo_accessible, get_current_dojo_challenge
 from ...utils.workspace import exec_run
@@ -40,6 +41,21 @@ HOST_HOMES = pathlib.Path(HOST_DATA_PATH) / "workspace" / "homes"
 HOST_HOMES_MOUNTS = HOST_HOMES / "mounts"
 HOST_HOMES_OVERLAYS = HOST_HOMES / "overlays"
 
+# Panic button
+def remove_all_containers(dojo=None):
+    containers = get_all_containers(dojo)
+    # Stop the containers...
+    for container in containers:
+        try:
+            container.remove(force=True, v=True)
+        except (docker.errors.NotFound, docker.errors.APIError):
+            pass
+    # ... then wait for each to be removed
+    for container in containers:
+        try:
+            container.wait(condition="removed")
+        except (docker.errors.NotFound, docker.errors.APIError):
+            pass
 
 def remove_container(user):
     # Just in case our container is still running on the other docker container, let's make sure we try to kill both
@@ -118,7 +134,7 @@ def start_container(docker_client, user, as_user, user_mounts, dojo_challenge, p
         entrypoint=[
             "/nix/var/nix/profiles/default/bin/dojo-init",
             f"{dojo_bin_path}/sleep",
-            "6h",
+            "2h",
         ],
         name=container_name(user),
         hostname=hostname,
@@ -392,3 +408,18 @@ class RunDocker(Resource):
             "module": dojo_challenge.module.id,
             "challenge": dojo_challenge.id,
         }
+
+@docker_namespace.route("/panic")
+class DockerPanic(Resource):
+    @admins_only
+    def post(self):
+        user = get_current_user()
+        logger.info(f"PANIC initiated by admin user {user.id}. Killing all workspace containers")
+        try:
+            remove_all_containers()
+        except Exception as e:
+            logger.exception(f'PANIC Failed with error {e}')
+            return {"success": False, "error": e}
+        logger.info("Panic complete")
+
+        return {"success": True}

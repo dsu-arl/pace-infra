@@ -105,6 +105,7 @@ $(() => {
     button_fetch_and_show("reset-home", "/pwncollege_api/v1/workspace/reset_home", "POST", {}, "Home directory reset successfully", "Home directory reset canceled", function() {
       return confirm("Are you sure you want to reset your home directory?");
     });
+    form_fetch_and_show("challenge-preference", "/pwncollege_api/v1/chall_pref", "POST", "Changes have been saved");
     $(".copy-button").click((event) => {
         let input = $(event.target).parents(".input-group").children("input")[0];
         input.select();

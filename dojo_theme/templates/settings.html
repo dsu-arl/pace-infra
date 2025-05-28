@@ -17,6 +17,10 @@
         {% endif %}
 	      <a class="nav-link" id="settings-tokens-tab" data-toggle="pill" href="#tokens" role="tab">Access Tokens</a>
         <a class="nav-link" id="settings-reset-home-tab" data-toggle="pill" href="#reset-home" role="tab">Reset Home</a>
+<<<<<<< HEAD
+=======
+        <a class="nav-link" id="settings-challenge-behavior-tab" data-toggle="pill" href="#challenge-behavior" role="tab">Challenge Behavior</a>
+>>>>>>> dev
       </div>
     </div>
     <div class="col-md-8">
@@ -206,6 +210,26 @@
           <div id="reset-home-results" class="form-group"></div>
         </div>
 
+<<<<<<< HEAD
+=======
+        <div class="tab-pane fade" id="challenge-behavior" role="tabpanel">
+          <h2>Challenge Behavior</h2>
+          <form method="post" id="challenge-preference-form">
+            <div class="form-group">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" role="switch" name="stop_on_logout" id="stop_on_logout"{% if chall_pref.stop_on_logout %} checked{% endif %}>
+                <label class="form-check-label" for="stop_on_logout">Stop challenge on logout</label>
+              </div>
+            </div>
+            <div id="challenge-preference-results" class="form-group">
+            </div>
+            <div class="form-group">
+                <input class="btn btn-md btn-primary btn-outlined" type="submit" value="Save Changes">
+            </div>
+          </form>
+        </div>
+
+>>>>>>> dev
       </div>
     </div>
   </div>
