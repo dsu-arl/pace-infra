@@ -409,6 +409,18 @@ class RunDocker(Resource):
             "challenge": dojo_challenge.id,
         }
 
+    @authed_only
+    def delete(self):
+        user = get_current_user()
+        try:
+            logger.info(f"Stopping challenge for user {user.id}")
+            remove_container(user)
+        except Exception as e:
+            logger.exception(f"Error stopping challenge for user {user.id}: {e}")
+            return {"success": False, "error": "Removal failed"}
+        return {"success": True}
+
+
 @docker_namespace.route("/panic")
 class DockerPanic(Resource):
     @admins_only
