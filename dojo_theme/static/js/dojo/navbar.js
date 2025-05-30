@@ -186,7 +186,7 @@ function DropdownStopChallenge(event) {
     result_notification.slideDown();
     var dot_max = 5;
     var dot_counter = 0;
-    const load_interval = setInverval(function loadmsg() {
+    const load_interval = setIntverval(function loadmsg() {
         if (result_message.html().startsWith("Stopping")) {
             if (dot_counter < dot_max - 1){
                 result_message.append(".");
