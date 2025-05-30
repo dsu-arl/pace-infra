@@ -173,6 +173,90 @@ function DropdownStartChallenge(event) {
     event.stopPropagation();
 }
 
+function DropdownStopChallenge(event) {
+    event.preventDefault();
+    const dropdown_controls = $("#dropdown-controls");
+    dropdown_controls.find("button").prop("disabled", true);
+
+    var result_notification = dropdown_controls.find('#result-notification');
+    var result_message = dropdown_controls.find('#result-message');
+    result_notification.removeClass('alert-danger');
+    result_notification.addClass('alert alert-warning alert-dismissable text-center');
+    result_message.html("Stopping.");
+    result_notification.slideDown();
+    var dot_max = 5;
+    var dot_counter = 0;
+    const load_interval = setInverval(function loadmsg() {
+        if (result_message.html().startsWith("Stopping")) {
+            if (dot_counter < dot_max - 1){
+                result_message.append(".");
+                dot_counter++;
+            }
+            else {
+                result_message.html("Stopping.");
+                dot_counter = 0;
+            }
+        }
+    }, 500);
+
+    CTFd.fetch('/pwncollege_api/v1/docker', {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+    }).then(function (response) {
+        if (response.status === 403) {
+            // User is not logged in or CTF is paused.
+            window.location =
+                CTFd.config.urlRoot +
+                "/login?next=" +
+                CTFd.config.urlRoot +
+                window.location.pathname +
+                window.location.hash;
+        }
+        return response.json();
+    }).then(async function (result) {
+        clearInterval(load_interval);
+        let result_notification = dropdown_controls.find('#result-notification');
+        let result_message = dropdown_controls.find('#result-message');
+
+        result_notification.removeClass();
+
+        if (result.success) {
+            let message = `Challenge stopped successfully!`;
+            result_message.html(message);
+            result_notification.addClass('alert alert-info alert-dismissable text-center');
+            await updateNavbarDropdown();
+            $(".challenge-active").removeClass("challenge-active");
+        }
+        else {
+            let message = "Error:";
+            message += "<br>";
+            message += "<code>" + result.error + "</code>";
+            message += "<br>";
+            result_message.html(message);
+            result_notification.addClass('alert alert-warning alert-dismissable text-center');
+        }
+
+        result_notification.slideDown();
+
+        setTimeout(function() {
+            dropdown_controls.find("button").prop("disabled", false);
+            dropdown_controls.find(".alert").slideUp();
+            item.find("#challenge-submit").removeClass("disabled-button");
+            item.find("#challenge-submit").prop("disabled", false);
+        }, 10000);
+    }).catch(function (error) {
+        console.error(error);
+        let result_message = dropdown_controls.find('#result-message');
+        result_message.html("Stop request failed: " + ((error || {}).message || error));
+        result_notification.addClass('alert alert-warning alert-dismissable text-center');
+    })
+    event.stopPropagation();
+}
+
 function submitFlag(event) {
     event.preventDefault();
     const challenge_id = $("#current").find("#challenge-id").val();
@@ -240,6 +324,7 @@ $(() => {
   });
     $("#previous").find("#challenge-start").click(DropdownStartChallenge);
     $("#current").find("#challenge-start").click(DropdownStartChallenge);
+    $("#stop").find("#challenge-stop").click(DropdownStopChallenge);
     $("#next").find("#challenge-start").click(DropdownStartChallenge);
     $("#dropdown-challenge-submit").click(submitFlag);
     $("#dropdown-challenge-input").keyup(function (event) {
