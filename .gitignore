@@ -3,3 +3,7 @@
 opt/
 sensai/
 data/
+
+# For infra scripts
+*.env
+!infra-docker-mandatory.env
