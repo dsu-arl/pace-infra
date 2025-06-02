@@ -8,7 +8,7 @@ then
 fi
 
 # check for additional file
-if [! -f "${DOJO_PATH}/infra-docker-additional.env"]
+if [ ! -f "${DOJO_PATH}/infra-docker-additional.env" ]
 then
     echo "INFO: infra-docker-additional.env not found. Creating from template"
     cp "${DOJO_PATH}/infra-docker-additional.env.template" "${DOJO_PATH}/infra-docker-additional.env"
