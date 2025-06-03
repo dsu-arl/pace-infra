@@ -13,26 +13,24 @@ defaults:
     shell: bash
     working-directory: ./infra-scripts
 
+env:
+  DOJO_PATH: ${{ github.workspace }}
+  DATA_PATH: ${{ vars.DATA_PATH }}
+  CTF_NAME: ${{ vars.CTF_NAME }}
+
 jobs:
   # Build Docker container
   build-dev:
     runs-on: [self-hosted, dev-runner]
     if: (startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')) && github.actor == vars.DEV1_SERVER_USER
     steps:
-      - name: Checkout Repository
-        run: |
-          if [ -d "${{ vars.DOJO_PATH }}" ]; then
-            rm -rf "${{ vars.DOJO_PATH }}"/*
-            rm -rf "${{ vars.DOJO_PATH }}"/.[!.]*
-          fi
-
-          git clone --depth 1 --branch "${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" ${{ vars.DOJO_PATH }}
-          cd ${{ vars.DOJO_PATH }}
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
       
       - name: Build Docker Image
-        run: |
-          docker build -t pwncollege/dojo ${{ vars.DOJO_PATH }}
-  
+        env:
+          DOJO_PATH: ${{ github.workspace }}
+        run: ./infra-build.sh
   build-dev2:
     runs-on: [self-hosted, dev2-runner]
     if: (startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')) && github.actor == vars.DEV2_SERVER_USER
@@ -141,7 +139,6 @@ jobs:
     env:
       DOJO_PATH: ${{ github.workspace }}
       DATA_PATH: ${{ vars.DATA_PATH }}
-      CTF_NAME: ${{ vars.CTF_NAME }}
     steps:
       - name: Stop and Remove Existing Container
         run: ./infra-down.sh
