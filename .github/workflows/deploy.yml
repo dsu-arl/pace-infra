@@ -139,8 +139,8 @@ jobs:
     environment: dev2
     env:
       DOJO_PATH: ${{ github.workspace }}
-      VIRTUAL_HOST: ${{ dev2.DOJO_HOST }}
-      LETSENCRYPT_HOST: ${{ dev2.DOJO_HOST }}
+      VIRTUAL_HOST: ${{ env.DOJO_HOST }}
+      LETSENCRYPT_HOST: ${{ env.DOJO_HOST }}
     steps:
       - name: Stop and Remove Existing Container
         run: ./infra-down.sh
