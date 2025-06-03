@@ -139,6 +139,7 @@ jobs:
     environment: dev2
     env:
       DOJO_PATH: ${{ github.workspace }}
+      DATA_PATH: ${{ vars.DATA_PATH }}
     steps:
       - name: Stop and Remove Existing Container
         run: ./infra-down.sh
