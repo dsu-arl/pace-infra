@@ -22,7 +22,7 @@ env:
   LETSENCRYPT_HOST: ${{ vars.DOJO_HOST }}
 
   CTF_NAME: ${{ vars.CTF_NAME }}
-  CTF_DESC: ${{ vars.CTF_DESC }}
+  CTF_DESC: ""
 
 jobs:
   # Build Docker container
