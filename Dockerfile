@@ -31,6 +31,8 @@ curl -fsSL https://get.docker.com | /bin/sh
 sed -i 's|-H fd:// ||' /lib/systemd/system/docker.service
 EOF
 
+RUN docker pull pwncollege/challenge-legacy
+
 COPY <<EOF /etc/docker/daemon.json
 {
     "data-root": "/data/docker",
@@ -78,8 +80,6 @@ find /opt/pwn.college/etc/systemd/system -type f -name '*.timer' -exec sh -c \
 ln -s /opt/pwn.college/etc/systemd/system/pwn.college.service /etc/systemd/system/multi-user.target.wants/
 find /opt/pwn.college/dojo -type f -exec ln -s {} /usr/bin/ \;
 EOF
-
-RUN docker pull pwncollege/challenge-legacy
 
 EXPOSE 22
 EXPOSE 80
