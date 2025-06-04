@@ -11,7 +11,7 @@ logger.setLevel(logging.INFO)
 
 
 for image, in DojoChallenges.query.with_entities(db.distinct(DojoChallenges.data["image"])).all():
-    if not image or image.startswith("mac:") or image.startswith("pwncollege-"):
+    if not image or image.startswith("mac:"):
         continue
 
     for client in all_docker_clients():
