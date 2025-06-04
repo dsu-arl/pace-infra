@@ -248,6 +248,11 @@ def dojo_solves(dojo, solves_code=None, format="csv"):
     else:
         return {"success": False, "error": "Invalid format"}, 400
 
+@dojo.route("/<dojo>/scoreboard")
+@dojo_route
+def scoreboard(dojo):
+    return render_template("scoreboard.html", dojo=dojo)
+
 
 def view_module(dojo, module):
     user = get_current_user()
