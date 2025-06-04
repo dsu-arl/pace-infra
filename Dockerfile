@@ -79,6 +79,8 @@ ln -s /opt/pwn.college/etc/systemd/system/pwn.college.service /etc/systemd/syste
 find /opt/pwn.college/dojo -type f -exec ln -s {} /usr/bin/ \;
 EOF
 
+RUN docker pull pwncollege/challenge-legacy
+
 EXPOSE 22
 EXPOSE 80
 EXPOSE 443
