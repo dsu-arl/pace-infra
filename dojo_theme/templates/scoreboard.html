@@ -1,10 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="jumbotron">
+    <div class="container">
+        <h1 class="brand-white brand-mono-bold">{{ dojo.name or dojo.id }}<span class="brand-dot">.</span></h1>
+    </div>
+</div>
 <div class="container">
-<h2 class="row" id="scoreboard-heading">30-Day Scoreboard:</h2>
-{% from "macros/scoreboard.html" import scoreboard %}
-{{ scoreboard() }}
+    <h2></h2>
+    <h2 class="row" id="scoreboard-heading">30-Day Scoreboard:</h2>
+    {% from "macros/scoreboard.html" import scoreboard %}
+    {{ scoreboard() }}
 </div>
 {% endblock %}
 
