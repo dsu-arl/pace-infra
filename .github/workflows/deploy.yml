@@ -41,7 +41,7 @@ jobs:
       - name: Quick Deploy
         run: docker exec -it dojo dojo sync
     
-  # quick deploy dev2
+  # quick deploy dev2 (tested)
   refresh-dev2:
     runs-on: [self-hosted, dev-runner]
     if: |
