@@ -41,9 +41,9 @@ jobs:
       - name: Quick Deploy
         run: docker exec -it dojo dojo sync
     
-  # quick deploy dev2 (tested)
+  # quick deploy dev2
   refresh-dev2:
-    runs-on: [self-hosted, dev-runner]
+    runs-on: [self-hosted, dev2-runner]
     if: |
       !startsWith(github.event.head_commit.message, 'DEPLOY:') &&
       ((startsWith(github.ref, 'refs/heads/feature/') ||
