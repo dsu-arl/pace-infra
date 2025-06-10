@@ -39,7 +39,7 @@ jobs:
         uses: actions/checkout@v4.2.2
       
       - name: Quick Deploy
-        run: docker exec -it dojo dojo sync
+        run: docker exec dojo dojo sync
     
   # quick deploy dev2
   refresh-dev2:
@@ -55,7 +55,7 @@ jobs:
         uses: actions/checkout@v4.2.2
       
       - name: Quick Deploy
-        run: docker exec -it dojo dojo sync
+        run: docker exec dojo dojo sync
 
   # Build Docker container
   build-dev:
