@@ -1,6 +1,18 @@
 name: PACE Infrastructure Pipeline
 
 on:
+  workflow_dispatch:
+    inputs:
+      targetEnv:
+        description: 'Environment to deploy to'
+        type: choice
+        required: true
+        default: 'Development'
+        options:
+          - Development
+          - Staging
+          - Testing
+          - Production
   push:
     branches:
       - master
@@ -25,10 +37,69 @@ env:
   CTF_DESC: ""
 
 jobs:
+  # quick deploy dev
+  refresh-dev:
+    runs-on: [self-hosted, dev-runner]
+    # If commit message pushed by dev1 to feature/* and upstream/* does NOT 
+    # start with "DEPLOY:"
+    if: |
+      github.actor == vars.DEV1_SERVER_USER &&
+      github.event_name == 'push' &&
+      !startsWith(github.event.head_commit.message, 'DEPLOY:') &&
+      (
+        startsWith(github.ref, 'refs/heads/feature/') ||
+        startsWith(github.ref, 'refs/heads/upstream/')
+      )
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+      
+      - name: Quick Deploy
+        run: docker exec dojo dojo sync
+    
+  # quick deploy dev2 (tested)
+  refresh-dev2:
+    runs-on: [self-hosted, dev2-runner]
+    # If commit message pushed by dev2 to feature/* and upstream/* does NOT 
+    # start with "DEPLOY:"
+    if: |
+      github.actor == vars.DEV2_SERVER_USER &&
+      github.event_name == 'push' &&
+      !startsWith(github.event.head_commit.message, 'DEPLOY:') &&
+      (
+        startsWith(github.ref, 'refs/heads/feature/') ||
+        startsWith(github.ref, 'refs/heads/upstream/')
+      )
+    environment: dev2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+      
+      - name: Quick Deploy
+        run: docker exec dojo dojo sync
+
   # Build Docker container
   build-dev:
     runs-on: [self-hosted, dev-runner]
-    if: (startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')) && github.actor == vars.DEV1_SERVER_USER
+    # Allow dev1 user to manually deploy any branch but only deploy 
+    # feature/ and upstream/ via push and only if commit 
+    # starts with "DEPLOY:"
+    if: |
+      github.actor == vars.DEV1_SERVER_USER &&
+      (
+        (
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.targetEnv == 'Development' 
+        ) ||
+        ( 
+          startsWith(github.event.head_commit.message, 'DEPLOY:') &&
+          (
+            startsWith(github.ref, 'refs/heads/feature/') ||
+            startsWith(github.ref, 'refs/heads/upstream/')
+          )
+        )
+      )
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
@@ -38,7 +109,24 @@ jobs:
 
   build-dev2:
     runs-on: [self-hosted, dev2-runner]
-    if: (startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')) && github.actor == vars.DEV2_SERVER_USER
+    # Allow dev2 user to manually deploy any branch but only deploy 
+    # feature/ and upstream/ via push and only if commit 
+    # starts with "DEPLOY:"
+    if: |
+      github.actor == vars.DEV2_SERVER_USER &&
+      (
+        (
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.targetEnv == 'Development' 
+        ) ||
+        ( 
+          startsWith(github.event.head_commit.message, 'DEPLOY:') &&
+          (
+            startsWith(github.ref, 'refs/heads/feature/') ||
+            startsWith(github.ref, 'refs/heads/upstream/')
+          )
+        )
+      )
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
@@ -48,7 +136,17 @@ jobs:
 
   build-staging:
     runs-on: [self-hosted, staging-runner]
-    if: github.ref == 'refs/heads/dev'
+    # Only allow dev branch
+    # If manual deployment, ensure targetEnv is Staging
+    if: |
+      github.ref == 'refs/heads/dev' &&
+      (
+        github.event_name == 'push' ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.targetEnv == 'Staging'
+        )
+      )
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
@@ -58,7 +156,17 @@ jobs:
 
   build-testing:
     runs-on: [self-hosted, testing-runner]
-    if: github.ref == 'refs/heads/master'
+    # Only allow master branch
+    # If manual deployment, ensure targetEnv is Testing
+    if: |
+      github.ref == 'refs/heads/master' &&
+      (
+        github.event_name == 'push' ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.targetEnv == 'Testing'
+        )
+      )
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
@@ -69,7 +177,17 @@ jobs:
   build-prod:
     needs: deploy-testing
     runs-on: [self-hosted, prod-runner]
-    if: github.ref == 'refs/heads/master'
+    # Only allow master branch
+    # If manual deployment, ensure targetEnv is Production
+    if: |
+      github.ref == 'refs/heads/master' &&
+      (
+        github.event_name == 'push' ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.targetEnv == 'Production'
+        )
+      )
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
@@ -80,7 +198,24 @@ jobs:
   # Deploy to Dev (feature/* and upstream/* branches)
   deploy-dev:
     needs: build-dev
-    if: (startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')) && github.actor == vars.DEV1_SERVER_USER
+    # Allow dev1 user to manually deploy any branch but only deploy 
+    # feature/ and upstream/ via push and only if commit 
+    # starts with "DEPLOY:"
+    if: |
+      github.actor == vars.DEV1_SERVER_USER &&
+      (
+        (
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.targetEnv == 'Development' 
+        ) ||
+        ( 
+          startsWith(github.event.head_commit.message, 'DEPLOY:') &&
+          (
+            startsWith(github.ref, 'refs/heads/feature/') ||
+            startsWith(github.ref, 'refs/heads/upstream/')
+          )
+        )
+      )
     runs-on: [self-hosted, dev-runner]
     environment: dev
     steps:
@@ -93,7 +228,24 @@ jobs:
   # Deploy to dev2 environment (feature/* and upstream/* branches)
   deploy-dev2:
     needs: build-dev2
-    if: (startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')) && github.actor == vars.DEV2_SERVER_USER
+    # Allow dev2 user to manually deploy any branch but only deploy 
+    # feature/ and upstream/ via push and only if commit 
+    # starts with "DEPLOY:"
+    if: |
+      github.actor == vars.DEV2_SERVER_USER &&
+      (
+        (
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.targetEnv == 'Development' 
+        ) ||
+        ( 
+          startsWith(github.event.head_commit.message, 'DEPLOY:') &&
+          (
+            startsWith(github.ref, 'refs/heads/feature/') ||
+            startsWith(github.ref, 'refs/heads/upstream/')
+          )
+        )
+      )
     runs-on: [self-hosted, dev2-runner]
     environment: dev2
     steps:
@@ -106,7 +258,17 @@ jobs:
   # Deploy to Staging (dev branch)
   deploy-staging:
     needs: build-staging
-    if: github.ref == 'refs/heads/dev'
+    # Only allow dev branch
+    # If manual deployment, ensure targetEnv is Staging
+    if: |
+      github.ref == 'refs/heads/dev' &&
+      (
+        github.event_name == 'push' ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.targetEnv == 'Staging'
+        )
+      )
     runs-on: [self-hosted, staging-runner]
     environment: staging
     steps:
@@ -119,7 +281,17 @@ jobs:
   # Deploy to Testing (master branch)
   deploy-testing:
     needs: build-testing
-    if: github.ref == 'refs/heads/master'
+    # Only allow master branch
+    # If manual deployment, ensure targetEnv is Testing
+    if: |
+      github.ref == 'refs/heads/master' &&
+      (
+        github.event_name == 'push' ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.targetEnv == 'Testing'
+        )
+      )
     runs-on: [self-hosted, testing-runner]
     environment: testing
     steps:
@@ -132,7 +304,17 @@ jobs:
   # Deploy to Production (master branch)
   deploy-prod:
     needs: build-prod
-    if: github.ref == 'refs/heads/master'
+    # Only allow master branch
+    # If manual deployment, ensure targetEnv is Production
+    if: |
+      github.ref == 'refs/heads/master' &&
+      (
+        github.event_name == 'push' ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.targetEnv == 'Production'
+        )
+      )
     runs-on: [self-hosted, prod-runner]
     environment: production
     steps:
