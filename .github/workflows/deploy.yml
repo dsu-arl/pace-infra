@@ -25,10 +25,46 @@ env:
   CTF_DESC: ""
 
 jobs:
+  # quick deploy dev
+  refresh-dev:
+    runs-on: [self-hosted, dev-runner]
+    if: |
+      !startsWith(github.event.head_commit.message, 'DEPLOY:') &&
+      ((startsWith(github.ref, 'refs/heads/feature/') ||
+      startsWith(github.ref, 'refs/heads/upstream/')) &&
+      github.actor == vars.DEV1_SERVER_USER)
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+      
+      - name: Quick Deploy
+        run: docker exec -it dojo dojo sync
+    
+  # quick deploy dev2
+  refresh-dev2:
+    runs-on: [self-hosted, dev-runner]
+    if: |
+      !startsWith(github.event.head_commit.message, 'DEPLOY:') &&
+      ((startsWith(github.ref, 'refs/heads/feature/') ||
+      startsWith(github.ref, 'refs/heads/upstream/')) &&
+      github.actor == vars.DEV2_SERVER_USER)
+    environment: dev2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+      
+      - name: Quick Deploy
+        run: docker exec -it dojo dojo sync
+
   # Build Docker container
   build-dev:
     runs-on: [self-hosted, dev-runner]
-    if: (startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')) && github.actor == vars.DEV1_SERVER_USER
+    if: |
+      startsWith(github.event.head_commit.message, 'DEPLOY:') &&
+      ((startsWith(github.ref, 'refs/heads/feature/') ||
+      startsWith(github.ref, 'refs/heads/upstream/')) &&
+      github.actor == vars.DEV1_SERVER_USER)
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
@@ -38,7 +74,11 @@ jobs:
 
   build-dev2:
     runs-on: [self-hosted, dev2-runner]
-    if: (startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')) && github.actor == vars.DEV2_SERVER_USER
+    if: |
+      startsWith(github.event.head_commit.message, 'DEPLOY:') &&
+      ((startsWith(github.ref, 'refs/heads/feature/') ||
+      startsWith(github.ref, 'refs/heads/upstream/')) &&
+      github.actor == vars.DEV2_SERVER_USER)
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
@@ -80,7 +120,11 @@ jobs:
   # Deploy to Dev (feature/* and upstream/* branches)
   deploy-dev:
     needs: build-dev
-    if: (startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')) && github.actor == vars.DEV1_SERVER_USER
+    if: |
+      startsWith(github.event.head_commit.message, 'DEPLOY:') &&
+      ((startsWith(github.ref, 'refs/heads/feature/') ||
+      startsWith(github.ref, 'refs/heads/upstream/')) &&
+      github.actor == vars.DEV1_SERVER_USER)
     runs-on: [self-hosted, dev-runner]
     environment: dev
     steps:
@@ -93,7 +137,11 @@ jobs:
   # Deploy to dev2 environment (feature/* and upstream/* branches)
   deploy-dev2:
     needs: build-dev2
-    if: (startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/upstream/')) && github.actor == vars.DEV2_SERVER_USER
+    if: |
+      startsWith(github.event.head_commit.message, 'DEPLOY:') &&
+      ((startsWith(github.ref, 'refs/heads/feature/') ||
+      startsWith(github.ref, 'refs/heads/upstream/')) &&
+      github.actor == vars.DEV2_SERVER_USER)
     runs-on: [self-hosted, dev2-runner]
     environment: dev2
     steps:
