@@ -12,5 +12,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script defer onload="loadEventScoreboard(1); setInterval(loadEventScoreboard, 30 * 1000, 1);" src="{{ url_for('views.themes', path='js/dojo/scoreboard.js') }}"></script>
+<script defer onload="loadEventScoreboard(1); setInterval(loadEventScoreboard, 30 * 1000, 1); $('a.nav-link.close-link').trigger('click');" src="{{ url_for('views.themes', path='js/dojo/scoreboard.js') }}"></script>
 {% endblock %}
