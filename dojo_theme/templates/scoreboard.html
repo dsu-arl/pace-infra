@@ -1,19 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="jumbotron">
-    <div class="container">
-        <h1 class="brand-white brand-mono-bold">{{ dojo.name or dojo.id }}<span class="brand-dot">.</span></h1>
-    </div>
-</div>
-<div class="container">
-    <h2></h2>
-    <h2 class="row" id="scoreboard-heading">30-Day Scoreboard:</h2>
-    {% from "macros/scoreboard.html" import scoreboard %}
-    {{ scoreboard() }}
+<div class="container mt-2">
+    <h1 class="brand-white brand-mono-bold">{{ dojo.name or dojo.id }}</h1>
+    <h2 class="row" id="scoreboard-heading">Event Scoreboard:</h2>
+    {% from "macros/scoreboard.html" import event_scoreboard %}
+    {{ event_scoreboard() }}
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script defer onload="loadScoreboard(30, 1); setInterval(loadScoreboard, 30 * 1000, 30, 1);" src="{{ url_for('views.themes', path='js/dojo/scoreboard.js') }}"></script>
+<script defer onload="loadEventScoreboard(1); setInterval(loadEventScoreboard, 30 * 1000, 1);" src="{{ url_for('views.themes', path='js/dojo/scoreboard.js') }}"></script>
 {% endblock %}
