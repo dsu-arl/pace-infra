@@ -16,6 +16,14 @@
   {% endif %}
 
   <div class="row text-center">
+    <div class="col-lg-auto m-3">
+      <figure>
+        <a class="text-decoration-none" href="{{ url_for('pwncollege_dojo.scoreboard', dojo=dojo.reference_id) }}">
+          <i class="fas fa-trophy fa-3x"></i>
+          <figcaption><b>Event Scoreboard</b></figcaption>
+        </a>
+      </figure>
+    </div>
     {% if dojo.course and user %}
     <div class="col-lg-auto m-3">
       <figure>
