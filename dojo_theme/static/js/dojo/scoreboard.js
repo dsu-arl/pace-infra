@@ -99,6 +99,18 @@ function loadScoreboard(duration, page) {
     });
 }
 
+var updateInterval = null;
+var lastUpdateTime = null;
+
+function tickLastUpdated() {
+    let cur_time = new Date();
+    let scoreboard_updated = $('#scoreboard-updated');
+    
+    let second_diff = Math.floor((cur_time.getTime() - lastUpdateTime.getTime()) / 1000);
+    
+    scoreboard_updated.text(second_diff.toString() + " seconds ago");
+}
+
 // For event scoreboard page
 function loadEventScoreboard(page) {
     const dojo = init.dojo;
@@ -172,6 +184,11 @@ function loadEventScoreboard(page) {
                 pageButton.addClass(i == page ? "scoreboard-page-selected" : "scoreboard-page-unselected");
                 scoreboardPages.append(pageButton);
             });
+        }
+
+        lastUpdateTime = new Date();
+        if (updateInterval === null) {
+            updateInterval = setInterval(tickLastUpdated, 100);
         }
     });
 }
