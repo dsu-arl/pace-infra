@@ -1,11 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container pt-2">
-    <h1 class="brand-white brand-mono-bold">{{ dojo.name or dojo.id }}</h1>
-    <div class="row"> 
-        <h2 class="col-10" id="scoreboard-heading">Event Scoreboard:</h2>
-        <p class="col-2">Last updated: <span id="scoreboard-updated">never</span></p>
+<div class="container mt-2">
+    <div class="d-flex justify-content-between"> 
+        <h2 class="brand-mono-bold" id="scoreboard-heading">{{ dojo.name or dojo.id }}</h2>
+        <p class="align-self-end">Last updated: <span id="scoreboard-updated">never</span></p>
     </div>
     {% from "macros/scoreboard.html" import event_scoreboard %}
     {{ event_scoreboard() }}
