@@ -1,9 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-2">
+<div class="container pt-2">
     <h1 class="brand-white brand-mono-bold">{{ dojo.name or dojo.id }}</h1>
-    <h2 class="row" id="scoreboard-heading">Event Scoreboard:</h2>
+    <div class="row"> 
+        <h2 class="col-10" id="scoreboard-heading">Event Scoreboard:</h2>
+        <h3 class="col-2">Last updated: <span id="scoreboard-updated">never</span></h3>
+    </div>
     {% from "macros/scoreboard.html" import event_scoreboard %}
     {{ event_scoreboard() }}
 </div>
