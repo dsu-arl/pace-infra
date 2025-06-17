@@ -3,7 +3,7 @@ import traceback
 import datetime
 import sys
 
-from flask import Blueprint, render_template, abort, send_file, redirect, url_for, Response, stream_with_context, request, g
+from flask import Blueprint, render_template, abort, send_file, redirect, url_for, Response, stream_with_context, request, g, make_response
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import and_, or_
 from CTFd.plugins import bypass_csrf_protection
@@ -251,8 +251,9 @@ def dojo_solves(dojo, solves_code=None, format="csv"):
 @dojo.route("/<dojo>/scoreboard")
 @dojo_route
 def scoreboard(dojo):
-    return render_template("scoreboard.html", dojo=dojo)
-
+    resp = make_response(render_template("scoreboard.html", dojo=dojo))
+    resp.headers.set('Content-Security-Policy', 'frame-ancestors *')
+    return resp
 
 def view_module(dojo, module):
     user = get_current_user()
