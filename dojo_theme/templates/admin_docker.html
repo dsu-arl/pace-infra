@@ -14,12 +14,18 @@
       <input type="number" class="form-control" id="default_timeout" name="default_timeout" value="2" min="1" max="12">
     </div>
     <div class="form-group">
-      <label for="min_timeout">Minimum Challenge Timeout</label>
+      <label for="min_timeout">Minimum Allowed Challenge Timeout</label>
       <input type="number" class="form-control" id="min_timeout" name="min_timeout" value="1">
     </div>
     <div class="form-group">
-      <label for="max_timeout">Maximum Challenge Timeout</label>
+      <label for="max_timeout">Maximum Allowed Challenge Timeout</label>
       <input type="number" class="form-control" id="max_timeout" name="max_timeout" value="12">
+    </div>
+    <div class="form-group">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" role="switch" name="allow_user_timeout_config" id="allow_user_timeout_config" checked>
+        <label for="allow_user_timeout_config">Allow users to configure personal timeout</label>
+      </div>
     </div>
   </form>
 </div>
