@@ -33,6 +33,7 @@ from .pages.canvas import sync_canvas_user, canvas
 from .pages.writeups import writeups
 from .pages.belts import belts
 from .pages.index import static_html_override
+from .pages.docker import docker
 from .api import api
 
 
@@ -149,12 +150,14 @@ def load(app):
     app.register_blueprint(canvas)
     app.register_blueprint(writeups)
     app.register_blueprint(belts)
+    app.register_blueprint(docker)
     app.register_blueprint(api, url_prefix="/pwncollege_api/v1")
 
     app.jinja_env.filters["markdown"] = render_markdown
 
     register_admin_plugin_menu_bar("Dojos", "/admin/dojos")
     register_admin_plugin_menu_bar("Desktops", "/admin/desktops")
+    register_admin_plugin_menu_bar("Docker", "/admin/docker")
 
     before_request_funcs = app.before_request_funcs[None]
     tokens_handler = next(func for func in before_request_funcs if func.__name__ == "tokens")
