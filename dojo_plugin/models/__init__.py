@@ -797,8 +797,33 @@ class UserChallengePreferences(db.Model):
     user = db.relationship("Users")
 
     stop_on_logout = db.Column(db.Boolean, default=True)
+    challenge_timeout = db.Column(db.Integer)
 
-    __repr__ = columns_repr(["user", "stop_on_logout"])
+    __repr__ = columns_repr(["user", "stop_on_logout", "challenge_timeout"])
+
+class ChallengeConfigProfiles(db.Model):
+    __tablename__ = "admin_docker_config"
+    name = db.Column(
+        db.String(128),
+        primary_key=True
+    )
+
+    default_timeout = db.Column(db.Integer, default=6)
+    timeout_min = db.Column(db.Integer, default=1)
+    timeout_max = db.Column(db.Integer, default=12)
+    default_stop_on_logout = db.Column(db.Boolean, default=True)
+    allow_timeout_config = db.Column(db.Boolean, default=True)
+    allow_stop_on_logout_config = db.Column(db.Boolean, default=True)
+
+    __repr__ = columns_repr([
+        "name",
+        "default_timeout",
+        "timeout_min",
+        "timeout_max",
+        "default_stop_on_logout",
+        "allow_timeout_config",
+        "allow_stop_on_logout_config"
+    ])
 
 class Belts(Awards):
     __mapper_args__ = {"polymorphic_identity": "belt"}
