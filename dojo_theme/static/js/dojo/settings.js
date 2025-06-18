@@ -106,6 +106,7 @@ $(() => {
       return confirm("Are you sure you want to reset your home directory?");
     });
     form_fetch_and_show("challenge-preference", "/pwncollege_api/v1/chall_pref", "POST", "Changes have been saved");
+    form_fetch_and_show("admin-challenge-preference", "/pwncollege_api/v1/chall_pref", "POST", "Changes have been saved");
     $(".copy-button").click((event) => {
         let input = $(event.target).parents(".input-group").children("input")[0];
         input.select();
