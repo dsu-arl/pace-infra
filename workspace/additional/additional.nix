@@ -1,6 +1,10 @@
 { pkgs }:
 
 let
+  ghidra = import ./ghidra.nix { inherit pkgs; };
+  burpsuite = import ./burpsuite.nix { inherit pkgs; };
+  bata24-gef = import ./bata24-gef.nix { inherit pkgs; };
+
   pythonPackages = ps: with ps; [
     angr
     asteval
@@ -32,15 +36,15 @@ let
 
     system = [ htop rsync openssh nftables ];
 
-    editors = [ vim neovim emacs ];
+    editors = [ vim neovim emacs nano gedit ];
 
     terminal = [ tmux screen ];
 
     network = [ netcat-openbsd tcpdump wireshark termshark nmap burpsuite ];
 
-    debugging = [ strace ltrace gdb pwndbg gef ];
+    debugging = [ strace ltrace gdb pwndbg gef bata24-gef ];
 
-    reversing = [ ghidra ida-free radare2 cutter angr-management binaryninja-free ];
+    reversing = [ file ghidra ida-free radare2 cutter angr-management binaryninja-free ];
 
     web = [ firefox geckodriver ];
 

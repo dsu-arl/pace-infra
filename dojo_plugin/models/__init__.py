@@ -286,6 +286,8 @@ class DojoUsers(db.Model):
     dojo = db.relationship("Dojos", back_populates="users", overlaps="admins,members,students")
     user = db.relationship("Users")
 
+    survey_responses = db.relationship("SurveyResponses", back_populates="users", overlaps="admins,members,students")
+
     def solves(self, **kwargs):
         return DojoChallenges.solves(user=self.user, dojo=self.dojo, **kwargs)
 
@@ -465,10 +467,11 @@ class DojoChallenges(db.Model):
     description = db.Column(db.Text)
 
     data = db.Column(db.JSON)
-    data_fields = ["image", "path_override", "importable", "allow_privileged"]
+    data_fields = ["image", "path_override", "importable", "allow_privileged", "progression_locked", "survey"]
     data_defaults = {
         "importable": True,
-        "allow_privileged": True
+        "allow_privileged": True,
+        "progression_locked": False,
     }
 
     dojo = db.relationship("Dojos",
@@ -481,6 +484,8 @@ class DojoChallenges(db.Model):
                                  uselist=False,
                                  cascade="all, delete-orphan",
                                  back_populates="challenge")
+
+    survey_responses = db.relationship("SurveyResponses", back_populates="challenge", cascade="all, delete-orphan")
 
     def __init__(self, *args, **kwargs):
         default = kwargs.pop("default", None)
@@ -600,6 +605,23 @@ class DojoChallenges(db.Model):
                 .first())
 
     __repr__ = columns_repr(["module", "id", "challenge_id"])
+
+
+class SurveyResponses(db.Model):
+    __tablename__ = "survey_responses"
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    dojo_id = db.Column(db.Integer, db.ForeignKey("dojo_challenges.dojo_id", ondelete="CASCADE"), nullable=False)
+    challenge_id = db.Column(db.Integer, db.ForeignKey("challenges.id", ondelete="CASCADE"), index=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("dojo_users.user_id", ondelete="CASCADE"), nullable=False)
+    
+    type = db.Column(db.String(64), nullable=False)
+    prompt = db.Column(db.Text, nullable=False)
+    response = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+    challenge = db.relationship("DojoChallenges", back_populates="survey_responses")
+    users = db.relationship("DojoUsers", back_populates="survey_responses")
 
 
 class DojoResources(db.Model):
