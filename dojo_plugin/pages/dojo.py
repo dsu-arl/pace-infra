@@ -14,7 +14,7 @@ from CTFd.utils.helpers import get_infos
 
 from ..utils import get_current_container, get_all_containers, render_markdown
 from ..utils.stats import get_container_stats, get_dojo_stats
-from ..utils.dojo import dojo_route, get_current_dojo_challenge, get_prev_cur_next_dojo_challenge, dojo_update, dojo_admins_only, get_branches
+from ..utils.dojo import dojo_route, get_current_dojo_challenge, dojo_update, dojo_admins_only, get_branches
 from ..models import Dojos, DojoUsers, DojoStudents, DojoModules, DojoMembers, DojoChallenges
 
 dojo = Blueprint("pwncollege_dojo", __name__)
