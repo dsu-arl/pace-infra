@@ -28,12 +28,25 @@ def start_challenge(dojo, module, challenge, practice=False, *, session, as_user
 def solve_challenge(dojo, module, challenge, *, session, flag=None, user=None):
     flag = flag if flag is not None else workspace_run("cat /flag", user=user, root=True).stdout.strip()
     response = session.post(
-        f"{DOJO_URL}/pwncollege_api/v1/dojos/{dojo}/challenges/solve",
-        json={"module_id": module, "challenge_id": challenge, "submission": flag}
+        f"{DOJO_URL}/pwncollege_api/v1/dojos/{dojo}/{module}/{challenge}/solve",
+        json={"submission": flag}
     )
     assert response.status_code == 200, f"Expected status code 200, but got {response.status_code}"
     assert response.json()["success"], "Expected to successfully submit flag"
 
+def get_challenge_survey(dojo, module, challenge, session):
+    response = session.get(f"{DOJO_URL}/pwncollege_api/v1/dojos/{dojo}/{module}/{challenge}/surveys")
+    assert response.status_code == 200, f"Expected status code 200, but got {response.status_code}"
+    assert response.json()["success"], "Expected to recieve valid survey"
+    return response.json()
+
+def post_survey_response(dojo, module, challenge, survey_response, session):
+    response = session.post(
+        f"{DOJO_URL}/pwncollege_api/v1/dojos/{dojo}/{module}/{challenge}/surveys",
+        json={"response": survey_response}
+    )
+    assert response.status_code == 200, f"Expected status code 200, but got {response.status_code}"
+    assert response.json()["success"], "Expected to successfully submit survey"
 
 def db_sql(sql):
     db_result = dojo_run("db", input=sql)
@@ -490,3 +503,69 @@ def test_reset_home_directory(random_user):
         workspace_run("[ ! -f '/home/hacker/testfile' ]", user=user)
     except subprocess.CalledProcessError as e:
         assert False, f"Expected test file to be wiped, but got: {(e.stdout, e.stderr)}"
+
+
+@pytest.mark.dependency()
+def test_searchable_content(searchable_dojo, admin_session):
+    search_url = f"{DOJO_URL}/pwncollege_api/v1/search"
+
+    cases = [
+        # Matches in name only — verify name field
+        ("searchable", lambda r: any("searchable dojo" in d["name"].lower() for d in r["dojos"])),
+        ("hello", lambda r: any("hello module" in m["name"].lower() for m in r["modules"])),
+        ("Apple Challenge", lambda r: any("apple challenge" in c["name"].lower() for c in r["challenges"])),
+
+        # Matches in description — verify `match` exists and contains the query
+        ("search test content", lambda r: any("search test content" in (d.get("match") or "").lower() for d in r["dojos"])),
+        ("search testing", lambda r: any("search testing" in (m.get("match") or "").lower() for m in r["modules"])),
+        ("about apples", lambda r: any("about apples" in (c.get("match") or "").lower() for c in r["challenges"])),
+    ]
+
+    for query, validate in cases:
+        response = admin_session.get(search_url, params={"q": query})
+        assert response.status_code == 200, f"Request failed for query: {query}"
+        data = response.json()
+        assert data["success"]
+        assert validate(data["results"]), f"No expected match found for query: {query}"
+
+def test_search_no_results(admin_session):
+    search_url = f"{DOJO_URL}/pwncollege_api/v1/search"
+    query = "qwertyuiopasdfgh"  # something unlikely to match anything
+
+    response = admin_session.get(search_url, params={"q": query})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["success"]
+    assert not data["results"]["dojos"], "Expected no dojo matches"
+    assert not data["results"]["modules"], "Expected no module matches"
+    assert not data["results"]["challenges"], "Expected no challenge matches"
+
+def test_progression_locked(progression_locked_dojo, random_user):
+    uid, session = random_user
+    assert session.get(f"{DOJO_URL}/dojo/{progression_locked_dojo}/join/").status_code == 200
+    start_challenge(progression_locked_dojo, "progression-locked-module", "unlocked-challenge", session=session)
+
+    with pytest.raises(AssertionError, match="Failed to start challenge: This challenge is locked"):
+        start_challenge(progression_locked_dojo, "progression-locked-module", "locked-challenge", session=session)
+
+    solve_challenge(progression_locked_dojo, "progression-locked-module", "unlocked-challenge", session=session, user=uid)
+    start_challenge(progression_locked_dojo, "progression-locked-module", "locked-challenge", session=session)
+
+def test_surveys(surveys_dojo, random_user):
+    uid, session = random_user
+    assert session.get(f"{DOJO_URL}/dojo/{surveys_dojo}/join/").status_code == 200
+
+    challenge_level_survey = get_challenge_survey(surveys_dojo, "surveys-module-1", "challenge-level", session=session)
+    module_level_survey = get_challenge_survey(surveys_dojo, "surveys-module-1", "module-level", session=session)
+    dojo_level_survey = get_challenge_survey(surveys_dojo, "surveys-module-2", "dojo-level", session=session)
+
+    assert challenge_level_survey["prompt"] == "Challenge-level prompt", "Challenge-level survey is wrong/missing"
+    assert module_level_survey["prompt"] == "Module-level prompt", "Module-level survey is wrong/missing"
+    assert dojo_level_survey["prompt"] == "Dojo-level prompt", "Dojo-level survey is wrong/missing"
+
+    assert len(dojo_level_survey["options"]) == 3, "Survey options are wrong/missing"
+
+    post_survey_response(surveys_dojo, "surveys-module-1", "challenge-level", "Test response", session=session)
+    post_survey_response(surveys_dojo, "surveys-module-1", "module-level", "up", session=session)
+    post_survey_response(surveys_dojo, "surveys-module-2", "dojo-level", 1, session=session)

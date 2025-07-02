@@ -14,7 +14,7 @@ from CTFd.utils.helpers import get_infos
 
 from ..utils import get_current_container, get_all_containers, render_markdown
 from ..utils.stats import get_container_stats, get_dojo_stats
-from ..utils.dojo import dojo_route, get_current_dojo_challenge, get_prev_cur_next_dojo_challenge, dojo_update, dojo_admins_only, get_branches
+from ..utils.dojo import dojo_route, get_current_dojo_challenge, dojo_update, dojo_admins_only, get_branches
 from ..models import Dojos, DojoUsers, DojoStudents, DojoModules, DojoMembers, DojoChallenges
 
 dojo = Blueprint("pwncollege_dojo", __name__)
@@ -76,8 +76,8 @@ def active_module():
     g.dojo = active_challenge.dojo
 
     current_challenge = active_challenge
-    current_index = current_challenge.challenge_index
-    challenges = current_challenge.module.challenges
+    challenges = list(filter(lambda x: x.visible(), current_challenge.module.challenges))
+    current_index = challenges.index(current_challenge)
 
     previous_challenge = challenges[current_index - 1] if current_index > 0 else None
     next_challenge = challenges[current_index + 1] if current_index < (len(challenges) - 1) else None

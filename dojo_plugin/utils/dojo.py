@@ -69,6 +69,25 @@ DOJO_SPEC = Schema({
 
     Optional("auxiliary", default={}, ignore_extra_keys=True): dict,
 
+    Optional("survey"): Or(
+        {
+            "type": "multiplechoice",
+            "prompt": str,
+            Optional("probability"): float,
+            "options": [str],
+        },
+        {
+            "type": "thumb",
+            "prompt": str,
+            Optional("probability"): float,
+        },
+        {
+            "type": "freeform",
+            "prompt": str,
+            Optional("probability"): float,
+        },
+    ),
+
     Optional("modules", default=[]): [{
         **ID_NAME_DESCRIPTION,
         **VISIBILITY,
@@ -82,6 +101,25 @@ DOJO_SPEC = Schema({
             "module": ID_REGEX,
         },
 
+        Optional("survey"): Or(
+            {
+                "type": "multiplechoice",
+                "prompt": str,
+                Optional("probability"): float,
+                "options": [str],
+            },
+            {
+                "type": "thumb",
+                "prompt": str,
+                Optional("probability"): float,
+            },
+            {
+                "type": "freeform",
+                "prompt": str,
+                Optional("probability"): float,
+            },
+        ),
+
         Optional("challenges", default=[]): [{
             **ID_NAME_DESCRIPTION,
             **VISIBILITY,
@@ -89,6 +127,7 @@ DOJO_SPEC = Schema({
             Optional("image"): IMAGE_REGEX,
             Optional("allow_privileged"): bool,
             Optional("importable"): bool,
+            Optional("progression_locked"): bool,
             Optional("auxiliary", default={}, ignore_extra_keys=True): dict,
             # Optional("path"): Regex(r"^[^\s\.\/][^\s\.]{,255}$"),
 
@@ -103,6 +142,25 @@ DOJO_SPEC = Schema({
                 Optional("module"): ID_REGEX,
                 "challenge": ID_REGEX,
             },
+
+            Optional("survey"): Or(
+                {
+                    "type": "multiplechoice",
+                    "prompt": str,
+                    Optional("probability"): float,
+                    "options": [str],
+                },
+                {
+                    "type": "thumb",
+                    "prompt": str,
+                    Optional("probability"): float,
+                },
+                {
+                    "type": "freeform",
+                    "prompt": str,
+                    Optional("probability"): float,
+                },
+            )
         }],
 
         Optional("resources", default=[]): [Or(
@@ -333,7 +391,9 @@ def dojo_from_spec(data, *, dojo_dir=None, dojo=None):
                     challenge=challenge(
                         module_data.get("id"), challenge_data.get("id"), transfer=challenge_data.get("transfer", None)
                     ) if "import" not in challenge_data else None,
+                    progression_locked=challenge_data.get("progression_locked"),
                     visibility=visibility(DojoChallengeVisibilities, dojo_data, module_data, challenge_data),
+                    survey=shadow("survey", dojo_data, module_data, challenge_data, default=None),
                     default=(assert_import_one(DojoChallenges.from_id(*import_ids(["dojo", "module", "challenge"], dojo_data, module_data, challenge_data)),
                                         f"Import challenge `{'/'.join(import_ids(['dojo', 'module', 'challenge'], dojo_data, module_data, challenge_data))}` does not exist")
                              if "import" in challenge_data else None),
@@ -485,7 +545,7 @@ def dojo_create(user, repository, public_key, private_key, spec):
             assert re.match(repository_re, repository), f"Invalid repository, expected format: <code>{repository_re}</code>"
 
             if Dojos.query.filter_by(repository=repository).first():
-                raise IntegrityError()
+                raise AssertionError("This repository already exists as a dojo")
 
             dojo_dir = dojo_clone(repository, private_key)
 
@@ -535,6 +595,7 @@ def dojo_update(dojo, branch_name="main"):
 
         tmp_dir = tempfile.TemporaryDirectory(dir=DOJOS_TMP_DIR)
 
+        # MERGE NOTE: Begin diverged changes
         # Don't rename dojo path to temp path to fix branch selection
         # os.rename(str(dojo.path), tmp_dir.name)
         print(f"(DEBUG) Dojo path: {str(dojo.path)}", file=sys.stderr)
@@ -547,6 +608,13 @@ def dojo_update(dojo, branch_name="main"):
         dojo_git_command(dojo, "fetch", "origin", repo_path=str(dojo.path))
         dojo_git_command(dojo, "reset", "--hard", f"origin/{branch_name}", repo_path=str(dojo.path))
         dojo_git_command(dojo, "submodule", "update", "--init", "--recursive", repo_path=str(dojo.path))
+        # MERGE NOTE: End diverged changes. Commented below is upstream code as of f10e102
+        # os.rename(str(dojo.path), tmp_dir.name)
+
+        # dojo_git_command(dojo, "fetch", "--depth=1", "origin", repo_path=tmp_dir.name)
+        # dojo_git_command(dojo, "reset", "--hard", "origin", repo_path=tmp_dir.name)
+        # dojo_git_command(dojo, "submodule", "update", "--init", "--recursive", repo_path=tmp_dir.name)
+        # MERGE NOTE: End upstream
 
         try:
             _assert_no_symlinks(tmp_dir.name)
@@ -554,6 +622,7 @@ def dojo_update(dojo, branch_name="main"):
             dojo_git_command(dojo, "reset", "--hard", old_commit, repo_path=tmp_dir.name)
             dojo_git_command(dojo, "submodule", "update", "--init", "--recursive", repo_path=tmp_dir.name)
             raise
+        # MERGE NOTE: Keep ours
         # Skip renaming the temp path back to the dojo path to fix branch selection
         # finally:
         #     os.rename(tmp_dir.name, str(dojo.path))
@@ -619,32 +688,6 @@ def get_current_dojo_challenge(user=None):
         .first()
     )
 
-
-def get_prev_cur_next_dojo_challenge(user=None, active=None):
-    container = get_current_container(user)
-    if not container:
-        return {
-        'previous':None,
-        'current':None,
-        'next':None
-        }
-
-    if active:
-        current = active
-    else:
-        current = get_current_dojo_challenge(user)
-
-    current_index = current.challenge_index
-    challenges = current.module.challenges
-
-    previous = challenges[current_index - 1] if current_index > 0 else None
-    next = challenges[current_index + 1] if current_index < (len(challenges) - 1) else None
-
-    return {
-        'previous':previous,
-        'current':current,
-        'next':next
-    }
 
 def get_branches(repository):
     url = f'https://api.github.com/repos/{repository}/branches'
