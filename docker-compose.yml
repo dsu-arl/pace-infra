@@ -68,7 +68,7 @@ services:
       - UPLOAD_FOLDER=/var/uploads
       - DATABASE_URL=mysql+pymysql://${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}
       - REDIS_URL=redis://cache:6379
-      - WORKERS=8
+      - WORKERS=${CTFD_WORKERS}
       - LOG_FOLDER=/var/log/CTFd
       - ACCESS_LOG=-
       - ERROR_LOG=-
