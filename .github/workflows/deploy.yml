@@ -35,6 +35,7 @@ env:
 
   CTF_NAME: ${{ vars.CTF_NAME }}
   CTF_DESC: ""
+  CTFD_WORKERS: ${{ vars.CTFD_WORKERS }}
 
 jobs:
   # quick deploy dev
