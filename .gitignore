@@ -3,7 +3,9 @@
 opt/
 sensai/
 data/
+<<<<<<< HEAD
 
 # For infra scripts
 *.env
 !infra-docker-mandatory.env
+cache/

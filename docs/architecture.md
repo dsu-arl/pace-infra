@@ -112,8 +112,6 @@ The DOJO uses mysql.
 
 The DOJO database lives in the `db` container by default.
 You can use an external database by setting `DB_HOST` in `config.env`.
-To save resources, also set `DB_EXTERNAL` to `yes` so that the `db` container does not actually start mysql.
-
 You can launch a database client session with `dojo db`.
 
 ## CTFd and the dojo-plugin
@@ -149,7 +147,6 @@ This overlay is built (e.g., the nix packages are installed) by the [workspace-b
 This will be done before the DOJO can start up, imposing a delay on the start of a fresh dojo.
 
 To improve isolation between the challenges themselves and the user tools, the DOJO uses a fuse-based overlay to block default challenge access to the `/nix` tools.
-This lives in the [workspace_fs](https://github.com/pwncollege/dojo/tree/master/workspacefs) container, also launched (automatically) via compose.
 
 ## DOJO Homes
 
@@ -196,7 +193,7 @@ The most useful logs are:
 - **dojo-init:** `docker logs dojo` (e.g., logs of the outer docker)
 - **dojo:** `journalctl -b -u pwn.college.*`
 - **ctfd:** `docker logs ctfd`
-- **nginx:** `docker logs nginx-proxy`
+- **nginx:** `docker logs nginx`
 
 All of these except for the first one should be run inside the outer docker.
 If you are outside of the outer docker (e.g., on the host itself), you can do stuff like `docker exec dojo journalctl -b -u dojo-up`.

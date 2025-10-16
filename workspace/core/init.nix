@@ -4,10 +4,12 @@ let
   initScript = pkgs.writeScript "dojo-init" ''
     #!${pkgs.bash}/bin/bash
 
+    set -o pipefail
+
+    FULL_PATH="$PATH"
     IMAGE_PATH="$(echo $PATH | cut -d: -f3-)"
     DEFAULT_PROFILE="/nix/var/nix/profiles/dojo-workspace"
-
-    export PATH="$DEFAULT_PROFILE/bin:$PATH"
+    PATH="$DEFAULT_PROFILE/bin"
 
     mkdir -p /run/current-system
     ln -sfT $DEFAULT_PROFILE /run/current-system/sw
@@ -28,6 +30,15 @@ let
       mkdir -p /bin && ln -sfT /run/dojo/bin/sh /bin/sh
     fi
 
+    home_directory="/home/hacker"
+    home_mount_options="$(findmnt -nro OPTIONS -- "$home_directory")"
+    if [ -n "$home_mount_options" ] && ! printf '%s' "$home_mount_options" | grep -Fqw 'nosuid'; then
+      mount -o remount,nosuid "$home_directory" || {
+        echo "DOJO_INIT_FAILED:Failed to remount home '$home_directory' with nosuid option." >&2
+        exit 1
+      }
+    fi
+
     mkdir -p /home/hacker /root
     mkdir -p /etc /etc/profile.d && touch /etc/passwd /etc/group
     echo "root:x:0:0:root:/root:/run/dojo/bin/bash" >> /etc/passwd
@@ -35,35 +46,51 @@ let
     echo "sshd:x:112:65534::/run/sshd:/usr/sbin/nologin" >> /etc/passwd
     echo "root:x:0:" >> /etc/group
     echo "hacker:x:1000:" >> /etc/group
-    echo "PATH=\"/run/challenge/bin:/run/workspace/bin:$IMAGE_PATH\"" > /etc/environment
+    echo "PATH=\"$FULL_PATH\"" > /etc/environment
     ln -sfT /run/dojo/etc/profile.d/99-dojo-workspace.sh /etc/profile.d/99-dojo-workspace.sh
+
+    mkdir -p /etc/gdb/gdbinit.d
+    echo "set debug-file-directory /lib/debug" > /etc/gdb/gdbinit.d/dojo.gdb
 
     echo $DOJO_AUTH_TOKEN > /run/dojo/var/auth_token
 
-    echo "Initialized."
+    echo "DOJO_INIT_INITIALIZED"
 
-    read DOJO_FLAG
+    if ! read -t 5 DOJO_FLAG; then
+      echo "DOJO_INIT_FAILED:Flag initialization error."
+      exit 1
+    fi
     echo $DOJO_FLAG | install -m 400 /dev/stdin /flag
 
-    exec > /run/dojo/var/root/init.log 2>&1
-    chmod 600 /run/dojo/var/root/init.log
-
     for path in /home/hacker /home/hacker/.config; do
+      test -L "$path" && rm -f "$path"
       mkdir -p "$path" && chown 1000:1000 "$path" && chmod 755 "$path"
     done
 
     if [ -x "/challenge/.init" ]; then
-        PATH="/run/challenge/bin:$IMAGE_PATH" /challenge/.init
+      (
+        touch /run/dojo/var/root/init.log
+        chmod 600 /run/dojo/var/root/init.log
+        PATH="/run/challenge/bin:$IMAGE_PATH" "$DEFAULT_PROFILE"/bin/timeout -k 10 30 /challenge/.init >& /run/dojo/var/root/init.log &
+        INIT_PID=$!
+        tail -f /run/dojo/var/root/init.log --pid "$INIT_PID" | head -n1M
+        if ! wait "$INIT_PID"
+        then
+          echo "DOJO_INIT_FAILED:Challenge initialization error."
+          exit 1
+        fi
+      )
     fi
 
     touch /run/dojo/var/ready
+    echo "DOJO_INIT_READY"
 
     exec "$@"
   '';
 
   profile = pkgs.writeText "dojo-profile" ''
-    if [[ "$PATH" != "/run/challenge/bin:/run/workspace/bin:"* ]]; then
-      export PATH="/run/challenge/bin:/run/workspace/bin:$PATH"
+    if [[ "$PATH" != "/run/challenge/bin:/run/dojo/bin:"* ]]; then
+      export PATH="/run/challenge/bin:/run/dojo/bin:$PATH"
     fi
 
     if [[ -z "$LANG" ]]; then
@@ -77,6 +104,22 @@ let
 
     if [[ -z "$SSL_CERT_FILE" ]]; then
       export SSL_CERT_FILE="/run/dojo/etc/ssl/certs/ca-bundle.crt"
+    fi
+
+    if [[ -z "$TERMINFO" ]]; then
+      export TERMINFO="/run/dojo/share/terminfo"
+    fi
+
+    if tput setaf 1 &> /dev/null; then
+      # Terminal supports colors
+      PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+      alias ls='ls --color=auto'
+      alias grep='grep --color=auto'
+    fi
+
+    if [[ "$TERM" == xterm* ]]; then
+      # Set the terminal title to the current user and host
+      PS1="\[\e]0;\u@\h: \w\a\]$PS1"
     fi
 
     PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
