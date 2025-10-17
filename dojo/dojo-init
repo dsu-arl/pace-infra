@@ -2,7 +2,7 @@
 
 mount --make-shared /
 
-data_mount_options="$(findmnt -no OPTIONS /data)"
+data_mount_options="$(findmnt -nro OPTIONS -- /data)"
 if [ "$?" -ne 0 ]; then
     echo "[+] Creating data storage"
     truncate -s 32G /data.img
@@ -15,7 +15,7 @@ if [ "$?" -ne 0 ]; then
     fi
     losetup "$loop_device" /data.img
     mount --options X-mount.mkdir "$loop_device" /data
-elif printf '%s' "$data_mount_options" | grep -q '\bnosuid\b'; then
+elif printf '%s' "$data_mount_options" | grep -Fqw 'nosuid'; then
     echo "[+] Remounting /data with suid enabled"
     mount --options remount,suid /data
 fi
@@ -37,8 +37,6 @@ DEFAULT_DOJO_HOST=localhost.pwn.college
 DEFAULT_CTF_NAME=pwn.college
 
 define DOJO_HOST "${DEFAULT_DOJO_HOST}"
-define VIRTUAL_HOST "${DEFAULT_DOJO_HOST}"
-define LETSENCRYPT_HOST "${DEFAULT_DOJO_HOST}"
 define DOJO_ENV development
 define DOJO_WORKSPACE core
 define WORKSPACE_KEY
@@ -50,6 +48,7 @@ define MAIL_PORT
 define MAIL_USERNAME
 define MAIL_PASSWORD
 define MAIL_ADDRESS
+define CORS_ORIGINS
 define DOCKER_USERNAME
 define DOCKER_TOKEN
 define DISCORD_CLIENT_ID
@@ -60,7 +59,6 @@ define DB_HOST db
 define DB_NAME ctfd
 define DB_USER ctfd
 define DB_PASS ctfd
-define DB_EXTERNAL no # change to anything but no and the db container will not start mysql
 define BACKUP_AES_KEY_FILE
 define S3_BACKUP_BUCKET
 define AWS_DEFAULT_REGION
@@ -68,19 +66,46 @@ define AWS_ACCESS_KEY_ID
 define AWS_SECRET_ACCESS_KEY
 define MAC_HOSTNAME
 define MAC_USERNAME
-define MAC_KEY_FILE
-define MAC_GUEST_CONTROL_FILE
 define CTF_NAME "${DEFAULT_CTF_NAME}"
 define CTF_DESC "${DEFAULT_CTF_NAME}"
+define ENABLE_SPLUNK false
 
 mv /data/.config.env /data/config.env
 . /data/config.env
 
+# Configure Docker daemon for Splunk logging if enabled
+if [ "${ENABLE_SPLUNK}" = "true" ]; then
+    echo "[+] Configuring Docker daemon for Splunk logging..."
+    if [ "$WORKSPACE_NODE" -eq 0 ]; then
+        echo "127.0.0.1 splunk" >> /etc/hosts
+    else
+        echo "192.168.42.1 splunk" >> /etc/hosts
+    fi
+    if [ -f /tmp/daemon-splunk.json ]; then
+        cp /tmp/daemon-splunk.json /etc/docker/daemon.json
+        echo "[+] Docker daemon configured for Splunk logging"
+    else
+        echo "[!] Warning: Splunk daemon configuration not found"
+    fi
+else
+    # Ensure standard configuration is used
+    if [ -f /tmp/daemon.json ]; then
+        cp /tmp/daemon.json /etc/docker/daemon.json
+    fi
+fi
+
 mkdir -p /data/workspace/nix
 mkdir -p /data/workspacefs/bin
+mkdir -p /data/ctfd-ipython
+
+# Enable systemd journal forwarding to Splunk if configured
+if [ "${ENABLE_SPLUNK}" = "true" ]; then
+    echo "[+] Enabling systemd journal forwarding to Splunk..."
+    systemctl enable journal-to-splunk.service 2>/dev/null || true
+fi
 
 mkdir -p /data/homes
-if [ "$(findmnt -n -o FSTYPE /data/homes)" != "btrfs" ] && [ "$(findmnt -n -o FSTYPE /data)" != "btrfs" ]; then
+if [ "$(findmnt -nro FSTYPE -- /data/homes)" != "btrfs" ] && [ "$(findmnt -nro FSTYPE -- /data)" != "btrfs" ]; then
     if [ ! -f /data/homes/btrfs.img ]; then
         echo "[+] Creating home storage"
         truncate -s 256G /data/homes/btrfs.img
@@ -130,14 +155,18 @@ fi
 
 dojo-node refresh
 
-iptables -N DOCKER-USER
-iptables -I DOCKER-USER -i workspace_net -j DROP
+iptables -F WORKSPACE-NET 2>/dev/null || iptables -N WORKSPACE-NET
+iptables -A WORKSPACE-NET -s 10.0.0.0/24 -m conntrack --ctstate NEW -j RETURN
+iptables -A WORKSPACE-NET -s 192.168.42.0/24 -m conntrack --ctstate NEW -j RETURN
+iptables -A WORKSPACE-NET -m conntrack --ctstate ESTABLISHED,RELATED -j RETURN
 for host in $(cat /opt/pwn.college/user_firewall.allowed); do
-    iptables -I DOCKER-USER -i workspace_net -d $(host $host | awk '{print $NF; exit}') -j ACCEPT
+    iptables -A WORKSPACE-NET -d $(host $host | awk '/has address/ {print $NF}' | sort | head -n1) -j RETURN
 done
-iptables -I DOCKER-USER -i workspace_net -s 10.0.0.0/24 -m conntrack --ctstate NEW -j ACCEPT
-iptables -I DOCKER-USER -i workspace_net -d 10.0.0.0/8 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-iptables -I DOCKER-USER -i workspace_net -s 192.168.42.0/24 -m conntrack --ctstate NEW -j ACCEPT
-iptables -I DOCKER-USER -i workspace_net -d 192.168.42.0/24 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+iptables -A WORKSPACE-NET -j DROP
 
-iptables -I DOCKER-USER -i workspace_net -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT
+iptables -N DOCKER-USER
+iptables -A DOCKER-USER -i workspace_net -j WORKSPACE-NET
+iptables -A DOCKER-USER -o workspace_net -j WORKSPACE-NET
+
+iptables -A INPUT -i workspace_net -j WORKSPACE-NET
+iptables -A OUTPUT -o workspace_net -j WORKSPACE-NET

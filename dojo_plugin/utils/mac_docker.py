@@ -25,17 +25,14 @@ import docker.errors
 # - container.attach_socket(params=dict(stdin=1, stream=1))
 # - container.put_archive(directory, tarbar)
 
-MAC_HOSTNAME = os.environ.get("MAC_HOSTNAME", "morholt")
-MAC_USERNAME = os.environ.get("MAC_USERNAME", "adamd")
-MAC_KEY_FILE = os.environ.get("MAC_KEY_FILE", "/opt/pwn.college/data/mac-key")
-MAC_GUEST_CONTROL_FILE = os.environ.get("MAC_GUEST_CONTROL_FILE", "guest-control.py")
-MAC_TIMEOUT_SECONDS = os.environ.get("MAC_TIMEOUT_SECONDS", 60*60*4)
+MAC_GUEST_CONTROL_FILE = "MACOSVM=/usr/local/bin/macosvm /usr/bin/python3 ./mac-host/guest-control.py"
+MAC_TIMEOUT_SECONDS = 60 * 60 * 4
 
 class MacDockerClient:
-    def __init__(self, hostname=None, username=None, key_filename=None, guest_key_file=None):
-        self.hostname = hostname or MAC_HOSTNAME
-        self.username = username or MAC_USERNAME
-        self.key_filename = key_filename or MAC_KEY_FILE  # Path to the SSH key for 'fluffy'
+    def __init__(self, hostname, username, key_path):
+        self.hostname = hostname
+        self.username = username
+        self.key_path = key_path
 
         self.containers = MacContainerCollection(self)
         self.images = MacImageCollection(self)
@@ -59,8 +56,8 @@ class MacDockerClient:
                        "-o", "ControlMaster=no",
                        "-o", "LogLevel=ERROR",
                        ]
-        if self.key_filename:
-            ssh_command.extend(['-i', self.key_filename])
+        if self.key_path:
+            ssh_command.extend(['-i', self.key_path])
         if self.username:
             ssh_command.append(f'{self.username}@{self.hostname}')
         else:
@@ -79,10 +76,21 @@ class MacDockerClient:
         if result.returncode != 0:
             if exception_on_fail:
                 error_msg = result.stdout.strip()
-                raise Exception(f'SSH {ssh_command=} {self.username=} {self.key_filename=} {self.hostname=} {result=} {result.returncode=} failed: {error_msg}')
+                raise Exception(f'SSH {ssh_command=} {self.username=} {self.key_path=} {self.hostname=} {result=} {result.returncode=} failed: {error_msg}')
         return result.returncode, result.stdout.strip() if result.stdout else b""
 
 
+
+class MockDetachedContainer:
+    """Mock container for detach=True mode compatibility"""
+    def wait(self):
+        pass
+
+    def logs(self):
+        return b""
+
+    def remove(self):
+        pass
 
 class MacContainerCollection:
     def __init__(self, client):
@@ -146,6 +154,8 @@ class MacContainerCollection:
     # For our mac-backed shim we only need interface compatibility, so we
     # accept the same parameters and immediately return an empty byte string. :contentReference[oaicite:2]{index=2}
     def run(self, image, command=None, **kwargs):
+        if kwargs.get('detach', False):
+            return MockDetachedContainer()
         return b""
 
 class MacContainer:
@@ -155,9 +165,13 @@ class MacContainer:
         self.vm_info = vm_info
         self.status = vm_info.get("status", "creating")
 
+    def logs(self, stream, follow):
+        # Very hacky thing, just return the other hacky thing that we did
+        return self.attach(stream)
+
     def attach(self, stream):
         # Super hacky thing, this just needs to return [b"Initialized.\n"]
-        return [b"Initialized.\n"]
+        return [b"Initialized.\n", b"Ready.\n"]
 
     def remove(self, force=True):
         # Kill the VM
@@ -218,7 +232,7 @@ class MacContainer:
         command = f"{MAC_GUEST_CONTROL_FILE} exec {tty_arg} {self.id} {shlex.quote(cmd)}"
         to_exec = [
             "ssh",
-            "-i", self.client.key_filename,
+            "-i", self.client.key_path,
             "-a", # prevent any SSH agent forward crazyness
             "-o", "StrictHostKeychecking=no",
             "-o", "UserKnownHostsFile=/dev/null",

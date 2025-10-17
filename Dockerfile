@@ -1,6 +1,29 @@
 # syntax=docker/dockerfile:1
 
-FROM ubuntu:24.04
+FROM ubuntu:24.04 AS kata-builder
+
+ENV KATA_VERSION=3.19.1
+
+SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential bc flex bison libssl-dev libelf-dev dwarves \
+      curl ca-certificates yq \
+    && rm -rf /var/lib/apt/lists/*
+
+ADD https://github.com/kata-containers/kata-containers.git#${KATA_VERSION} /src/kata-containers
+
+WORKDIR /src/kata-containers/tools/packaging/kernel
+
+RUN <<EOF
+  KERNEL_VERSION=$(yq -r '.assets.kernel.version' ../../../versions.yaml)
+  echo 'CONFIG_SECURITY_LANDLOCK=y' >> configs/fragments/x86_64/base.conf
+  ./build-kernel.sh -v "$KERNEL_VERSION" setup
+  ./build-kernel.sh -v "$KERNEL_VERSION" build
+  ./build-kernel.sh -v "$KERNEL_VERSION" install
+EOF
+
+FROM ubuntu:24.04 AS dojo
 
 SHELL ["/bin/bash", "-ceox", "pipefail"]
 
@@ -21,29 +44,29 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         iputils-ping
         jq
         kmod
+        python3-requests
         unzip
         wget
         wireguard
 EOF
 
 RUN <<EOF
-curl -fsSL https://get.docker.com | /bin/sh
+curl -fsSL https://get.docker.com | VERSION=27.5.1 sh
 sed -i 's|-H fd:// ||' /lib/systemd/system/docker.service
 EOF
 
-COPY <<EOF /etc/docker/daemon.json
-{
-    "data-root": "/data/docker",
-    "hosts": ["unix:///run/docker.sock"],
-    "builder": {
-        "Entitlements": {
-            "security-insecure": true
-        }
-    }
-}
-EOF
+COPY etc/docker/daemon*.json /tmp/
+RUN cp /tmp/daemon.json /etc/docker/daemon.json
 
 ADD https://raw.githubusercontent.com/moby/profiles/master/seccomp/default.json /etc/docker/seccomp.json
+
+RUN <<EOF
+KATA_VERSION=3.19.1
+curl -L https://github.com/kata-containers/kata-containers/releases/download/${KATA_VERSION}/kata-static-${KATA_VERSION}-amd64.tar.xz | tar -xJ --strip-components=2 -C /opt
+ln -s /opt/kata/bin/containerd-shim-kata-v2 /usr/local/bin/containerd-shim-kata-v2
+EOF
+
+COPY --from=kata-builder /usr/share/kata-containers/vmlinux.container /opt/kata/share/kata-containers/vmlinux.container
 
 RUN <<EOF
 cd /tmp
@@ -56,7 +79,8 @@ EOF
 ADD https://github.com/CTFd/CTFd.git#3.6.0 /opt/CTFd
 
 COPY <<EOF /etc/fstab
-tmpfs /run/dojofs tmpfs defaults,mode=755,shared 0 0
+shm /dev/shm tmpfs defaults,nosuid,nodev,noexec,size=50% 0 0
+tmpfs /run/dojo tmpfs defaults,mode=755,shared 0 0
 /data/homes /run/homefs none defaults,bind,nosuid 0 0
 EOF
 
@@ -71,6 +95,8 @@ EOF
 WORKDIR /opt/pwn.college
 COPY . .
 
+RUN find /opt/pwn.college/ctfd/patches -exec patch -d /opt/CTFd -p1 -N -i {} \;
+
 RUN <<EOF
 find /opt/pwn.college/etc/systemd/system -type f -exec ln -s {} /etc/systemd/system/ \;
 find /opt/pwn.college/etc/systemd/system -type f -name '*.timer' -exec sh -c \
@@ -82,4 +108,5 @@ EOF
 EXPOSE 22
 EXPOSE 80
 EXPOSE 443
+EXPOSE 8001
 CMD ["dojo", "init"]

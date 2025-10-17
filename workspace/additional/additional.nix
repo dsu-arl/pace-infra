@@ -3,6 +3,7 @@
 let
   ghidra = import ./ghidra.nix { inherit pkgs; };
   burpsuite = import ./burpsuite.nix { inherit pkgs; };
+  wireshark = import ./wireshark.nix { inherit pkgs; };
   bata24-gef = import ./bata24-gef.nix { inherit pkgs; };
 
   pythonPackages = ps: with ps; [
@@ -34,13 +35,13 @@ let
 
     compression = [ zip unzip gzip gnutar ];
 
-    system = [ htop rsync openssh nftables ];
+    system = [ htop rsync openssh nftables landrun firejail ];
 
-    editors = [ vim neovim emacs nano gedit ];
+    editors = [ vim neovim emacs nano gedit zed-editor.remote_server ];
 
-    terminal = [ tmux screen ];
+    terminal = [ tmux screen kitty.terminfo ];
 
-    network = [ netcat-openbsd tcpdump wireshark termshark nmap burpsuite ];
+    network = [ netcat-openbsd tcpdump wireshark tshark termshark nmap burpsuite ];
 
     debugging = [ strace ltrace gdb pwndbg gef bata24-gef ];
 
